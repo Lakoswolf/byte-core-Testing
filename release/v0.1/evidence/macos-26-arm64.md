@@ -2,7 +2,7 @@
 
 Status: passed manual deployment-candidate test.
 
-Tested commit: `5e653f9bef37d26ff83b3844ceaeabb17b00547b`
+Tested commit: `d1de20bf535738344d6f2c6f7831ca1140839700`
 Candidate archive SHA-256: `b5cef86ed4863a39b04aad8b3afe68fb66697a50efd557957599c792a0e7033e`
 Runtime: macOS 26.6.2 (build 25G83), arm64; Python 3.13.15; Git 2.50.1
 Shell: Zsh 5.9
