@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import io
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -907,6 +908,36 @@ class CliTests(unittest.TestCase):
         self.assertEqual(before, ())
         self.assertEqual(after, ())
         self.assertEqual(json.loads(completed.stdout)["command"], "check")
+
+    def test_launcher_rejects_unsupported_python_without_traceback(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            fake_python = Path(temporary) / "python3"
+            fake_python.write_text(
+                "#!/bin/sh\n"
+                "if [ \"${1:-}\" = -c ]; then exit 1; fi\n"
+                "echo unexpected-python-invocation >&2\n"
+                "exit 99\n",
+                encoding="utf-8",
+            )
+            fake_python.chmod(0o700)
+            environment = dict(os.environ)
+            environment["PATH"] = f"{temporary}:{environment['PATH']}"
+            completed = subprocess.run(
+                [str(LAUNCHER), "--help"],
+                check=False,
+                capture_output=True,
+                text=True,
+                timeout=10,
+                env=environment,
+            )
+
+        self.assertEqual(completed.returncode, 3)
+        self.assertEqual(
+            completed.stderr,
+            "byte: Python 3.11 through 3.14 is required\n",
+        )
+        self.assertNotIn("Traceback", completed.stderr)
+        self.assertNotIn("unexpected-python-invocation", completed.stderr)
 
     def test_posix_launcher_syntax(self) -> None:
         completed = subprocess.run(

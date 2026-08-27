@@ -2,7 +2,7 @@
 
 Byte Core uses one `byte` command for lifecycle operations. The command separates checking, planning, applying, verifying, and backing out changes so that read-only discovery cannot silently become mutation.
 
-The current bootstrap implements `check`, the initial deployment lifecycle, and experimental exact-plan installation and update apply and verification proofs. Destructive removal, the top-level update workflow, and diagnostics remain reserved design commitments, not functional capabilities.
+The current bootstrap implements `check`, the initial deployment lifecycle, and experimental exact-plan installation, update, removal, shell-integration, diagnostics, and reviewed-reporting proofs. These remain internal bootstrap capabilities rather than a supported installed CLI. Remote update discovery, automatic diagnostics, and production deployment remain reserved design commitments, not functional capabilities.
 
 ## Grammar
 
