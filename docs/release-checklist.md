@@ -2,9 +2,11 @@
 
 Byte Core 0.1.0 remains blocked until every automated check and every supported-platform manual record passes. This checklist is repeatable; it does not authorize a tag by itself.
 
+The current checker and ledger cover Ubuntu 24.04, macOS 15, and macOS 26 plus the independent review. [Issue #36](https://github.com/kodiakdirus/byte-core/issues/36) also requires Kubuntu 26.04 support and evidence before release; implementation must extend the matrix, checker, and ledger. A pass against the existing three-target schema would not close that issue or authorize release.
+
 ## Candidate construction
 
-From a clean, reviewed `main` commit:
+Run the build and gate commands from a clean, reviewed source checkout of `main`. The candidate archive includes these public docs, but excludes the repository's `scripts/`, `tests/`, and `release/` evidence material; retain the source checkout for these steps.
 
 ```text
 python3 scripts/build_release_artifact.py --version 0.1.0 --output /absolute/new/byte-core-0.1.0
@@ -17,6 +19,8 @@ The builder accepts a new absolute output directory, copies only its explicit pu
 The second command validates descriptor integrity, scans the complete artifact for privacy findings, and validates the manual-evidence ledger. It deliberately succeeds while evidence is pending so pull-request CI can prove the automated candidate. The packager accepts only that complete descriptor-bounded, privacy-clean artifact and emits a normalized archive plus its SHA-256. Repackaging identical artifact bytes must produce an identical archive.
 
 The final release command adds `--require-complete` and must remain blocked until every platform record and the independent fresh-user review pass.
+
+The checker validates ledger structure, required record headings, descriptor integrity, and artifact privacy. It does not authenticate observations, prove reviewer independence, fetch CI conclusions, or establish that every evidence record applies to the exact candidate being tagged. Those remain explicit release-review responsibilities.
 
 ## Automated gate
 
@@ -32,7 +36,7 @@ CI configuration is not evidence by itself. Record the URLs and conclusions of p
 
 ## Manual platform record
 
-Follow the exact [deployment-candidate testing guide](deployment-testing.md). Copy the matching template from [`release/v0.1/evidence/`](../release/v0.1/evidence/) for each supported target. Use only fresh fictional deployment data. Include the tested commit and candidate archive SHA-256, then record:
+Follow the exact [deployment-candidate testing guide](deployment-testing.md). In the source checkout, copy the matching template from `release/v0.1/evidence/` for each supported target. Use only fresh fictional deployment data. Include the tested commit and candidate archive SHA-256, then record:
 
 ```text
 # TARGET manual evidence
@@ -60,7 +64,7 @@ Change that target’s ledger status to `passed` only after the record is review
 
 ## Fresh-user review
 
-A reviewer who did not implement the feature follows the README and public docs without private assistance and completes the [fresh-user review template](../release/v0.1/evidence/fresh-user-review-template.md). Record unclear, missing, or assumed steps as release blockers and fix them before repeating the review. The `fresh_user_review` ledger entry remains `pending` until that record is reviewed.
+A reviewer who did not implement the feature follows the README and public docs without private assistance and completes `release/v0.1/evidence/fresh-user-review-template.md` in the source checkout. Record unclear, missing, or assumed steps as release blockers and fix them before repeating the review. The `fresh_user_review` ledger entry remains `pending` until that record is reviewed. Its evidence object also requires `reviewer_role` with the exact value `independent reviewer`, in addition to `completed_on`, `commit_sha`, and `record`.
 
 ## Final tag gate
 

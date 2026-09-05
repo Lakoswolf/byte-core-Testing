@@ -12,7 +12,7 @@ Byte Core v0.1 configuration uses TOML 1.0. The initial minimum runtime is Pytho
 
 Byte Core parses TOML with Python's standard-library `tomllib` module. It does not require a third-party runtime parser by default.
 
-`tomllib` is a parser, not a general TOML writer. When initialization is implemented, Byte Core may create a new configuration file from a deterministic, reviewed template. This does not authorize general rewriting of TOML. Byte Core must not silently rewrite deployment-owned configuration.
+`tomllib` is a parser, not a general TOML writer. Experimental initialization creates a new `deployment.toml` containing only `schema_version = 1` from a deterministic template. This does not authorize general rewriting of TOML. Byte Core must not silently rewrite deployment-owned configuration.
 
 ## Logical roots
 
@@ -70,6 +70,8 @@ Tables merge recursively by schema-defined key. Scalars replace lower-precedence
 
 A higher-precedence layer must not weaken a non-overridable safety invariant.
 
+The current internal resolver accepts caller-supplied layer files and validates schema versions, known keys, and value types. It does not discover layers, connect to inventory, enforce a general safety-policy schema, or provide a public configuration command. Its initial keys cover deployment labels, platform/host selection labels, a workspace-path string, and cache-retention metadata; resolving those values does not perform the described operations.
+
 Resolution is deterministic, records the source layer for every resolved value, and makes no file changes.
 
 Unknown keys, duplicate keys, invalid types, malformed syntax, and unsupported schema versions are errors. Missing optional deployment facts remain unknown. Missing required values produce validation errors; Byte Core must not invent a value.
@@ -84,19 +86,19 @@ The Core release version and configuration schema version are independent.
 
 A missing, malformed, non-positive, or unsupported future schema version fails safely without modifying files. Initial implementation supports only explicitly documented schema versions.
 
-Schema migrations are explicit version-to-version operations. Checking and planning a migration are read-only. Applying a migration requires an exact reviewed plan, recoverable backups, and post-migration validation.
+Any future schema migration must be an explicit version-to-version operation. Checking and planning must be read-only. Applying a migration requires an exact reviewed plan, recoverable backups, and post-migration validation.
 
-Routine Core updates must not silently migrate deployment-owned configuration.
+Routine Core updates must not silently migrate deployment-owned configuration. No migration engine or migration command is implemented; current update descriptors must explicitly declare that no migration is required.
 
 ## Path semantics
 
-Configured deployment paths use UTF-8 text and `/` as the logical separator. Relative paths resolve against `DEPLOYMENT_ROOT`.
+The intended configuration path contract uses UTF-8 text and `/` as the logical separator, with relative paths resolved against `DEPLOYMENT_ROOT`.
 
-Unless a future schema explicitly authorizes a field otherwise, configuration rejects absolute paths, parent traversal, environment expansion, and implicit home-directory expansion.
+The path contract requires rejection of absolute paths, parent traversal, environment expansion, and implicit home-directory expansion unless a future schema explicitly authorizes a field otherwise. The current internal resolver checks `paths.workspace` only as a string; it does not yet enforce those path restrictions or resolve the string against a deployment root. This is an implementation gap, and resolved configuration must not be treated as authorization for filesystem operations.
 
 Before mutation, Byte Core resolves the exact filesystem target and verifies containment after accounting for symbolic links. A configured path does not prove that the target exists or establish facts about its contents.
 
-Final operating-system-specific locations for the logical roots are defined separately by the supported-platform and lifecycle contracts.
+Final operating-system-specific locations are not selected yet. The experimental lifecycle commands require explicit absolute roots and perform their own target and containment checks independently of the internal configuration resolver.
 
 ## Updates and preservation
 

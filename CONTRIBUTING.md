@@ -71,6 +71,8 @@ Do not claim success based only on implementation. Distinguish check, plan, appl
 
 The repository has unit, privacy, support-matrix, and deterministic candidate-artifact gates. Manual supported-platform evidence remains incomplete. Do not represent configured CI or pending manual evidence as completed validation.
 
+Follow the [documentation maintenance rule](AGENTS.md#documentation-stays-with-the-change): update affected READMEs, contracts, guides, and release material in the same change as the behavior they describe. Verify affected examples and links, and summarize the documentation impact in the pull request, including why no update is needed when applicable. Keep implemented behavior, known gaps, planned work, and reviewed evidence distinct. Fictional fixture READMEs describe test inputs, not published releases.
+
 ## Versioning, branches, and releases
 
 Byte Core uses [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html) for release identifiers. Release versions have the form `MAJOR.MINOR.PATCH`, and Git tags add a leading `v`.
@@ -95,7 +97,7 @@ While the major version is `0`, Byte Core is in initial development. Interfaces,
 - A GitHub release may be created manually from an approved tag to summarize its contents and known limitations.
 - A GitHub release does not by itself imply package publication, compatibility, production support, or ongoing maintenance.
 
-Byte Core does not currently define automatic tag publication, package-manager publication, artifact signing, a changelog process, or a support policy. The deterministic candidate builder and release gate do not create or publish a release.
+Byte Core does not currently define automatic tag publication, package-manager publication, artifact signing, a changelog process, or a supported-release maintenance policy. The deterministic candidate builder and release gate do not create or publish a release.
 
 ### Validation and backout
 

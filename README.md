@@ -6,6 +6,14 @@ Byte Core is an independent community project exploring a safe, friendly, Codex-
 
 The repository has established its public foundation and initial configuration-ownership boundary. The v0.1 candidate is ready for supported-platform deployment testing, but no functional release or supported installed command-line interface exists yet. Installation and operational use are not currently supported.
 
+## Start here
+
+New to Byte? Follow [Your first session with Byte](docs/getting-started.md). Open a fresh checkout in Codex, use the supplied first message, and let Byte guide you through checking your computer and creating a disposable example deployment. The guide includes expected results, explanations of the generated documents, and a terminal alternative.
+
+Byte Core supplies the commands, templates, and working rules; Codex provides the conversational interface. A deployment is a separate folder of operator-owned configuration and documents. Your first session explores that structure using fictional data, without connecting to infrastructure.
+
+If you are reviewing a release candidate, continue with [deployment acceptance testing](docs/deployment-testing.md) after the introduction.
+
 ## Architectural rule
 
 > Byte Core owns behavior and structure; each deployment owns identity and truth.
@@ -29,41 +37,46 @@ Ignored files remain private local state, not safe storage for secrets. Ignore r
 
 ## Current capabilities
 
-At this bootstrap stage, Byte Core provides its public repository foundation, Apache License 2.0 licensing, initial repository-security baseline, a documented [configuration and ownership contract](docs/configuration.md), and a [canonical deployment-document contract](docs/canonical-documents.md). TOML 1.0 and Python 3.11 are the initial minimum configuration-format and runtime baseline; Python 3.11 through 3.14 form the current CI target.
+The checkout provides these experimental capabilities for disposable testing. They are not stable public APIs or a supported installed CLI.
 
-The repository also contains an internal, read-only layered configuration resolver, canonical document validator, neutral starter templates, an [installation lifecycle contract](docs/installation.md), checksummed local release descriptors, experimental exact-plan install, update, and removal apply and verification proofs, [optional reversible Bash/Zsh integration](docs/shell-integration.md), [local-only Byte Care diagnostics](docs/byte-care.md), a [repository-native Codex integration boundary](docs/codex-integration.md), and tests. These are experimental implementation proofs, not stable public APIs or supported user-facing tools.
+| Area | Implemented behavior | Contract and limits |
+| --- | --- | --- |
+| Environment checks | Read-only `check` through a POSIX launcher and Python standard-library implementation | [CLI](docs/cli.md); Python 3.11–3.14 and the exact host matrix |
+| Deployment initialization | Guided `init`, saved `plan init`, exact-plan `apply` and `verify`; creates a minimal TOML file and four documents | [Canonical documents](docs/canonical-documents.md); no infrastructure discovery |
+| Configuration | Internal schema-1 layered TOML resolution with type checks and source tracking | [Configuration](docs/configuration.md); no public resolver command or schema migration |
+| Core lifecycle | Exact-plan install, local update, removal, verification, replay checks, and bounded failure recovery | [Installation](docs/installation.md); explicit roots and local artifacts |
+| Guided updates | Local candidate checking and planning; exact-plan application with plan-ID confirmation | [CLI](docs/cli.md); no remote update discovery |
+| Shell integration | Reversible Bash/Zsh profile blocks and generic shell helpers | [Shell integration](docs/shell-integration.md); explicit opt-in, no package installation |
+| Byte Care | Explicit `doctor` reports, local storage, and optional reviewed GitHub create/comment transport | [Byte Care](docs/byte-care.md); no automatic collection or submission |
+| Codex guidance | Repository `AGENTS.md`, configured advisory SessionStart hook, and a first-session guide | [Codex integration](docs/codex-integration.md); no Byte skill or plugin package |
+| Candidate validation | Deterministic artifact and archive builders, integrity/privacy gates, and unit tests | [Release checklist](docs/release-checklist.md); manual evidence is still required |
 
-The repository includes experimental `byte check` and initial deployment planning, initialization, application, and verification proofs. They are not yet packaged or installed as a supported public CLI. There is no installer, update, removal, shell integration, functional release, or supported operational deployment yet.
+`byte remove --deployment-root` is a read-only preservation check. Installed Core removal uses `plan remove` and `apply`; deployment-owned documents are preserved.
 
 The intended v0.1 host and runtime boundary, automated evidence, and remaining manual evidence are published in the [support matrix](docs/support-matrix.md). The matrix defines release targets without changing the repository's pre-alpha support status.
 
-## Try the source checkout
+## Inspect the source checkout
 
-On a target host with Git and Python 3.11 or newer, a fresh reviewer can inspect the CLI without installation:
+For a quick terminal inspection with Git and Python 3.11 through 3.14:
 
 ```text
 git clone https://github.com/kodiakdirus/byte-core.git
 cd byte-core
-./bin/byte check
 ./bin/byte --help
+./bin/byte check
 python3 -m unittest discover -s tests
 ```
 
-Do not use the pre-alpha lifecycle against operational data. The [CLI contract](docs/cli.md) explains exact plans and exit statuses; the [installation contract](docs/installation.md) explains ownership and recovery. Supported-platform testers should follow the exact [deployment-candidate testing guide](docs/deployment-testing.md). The repeatable [v0.1 release checklist](docs/release-checklist.md) remains blocked on recorded platform evidence and an independent fresh-user review.
+Run these commands one at a time. If `check` reports `unsupported`, stop before lifecycle operations and consult the [first-session troubleshooting guide](docs/getting-started.md#when-something-does-not-work). The [CLI contract](docs/cli.md) explains exact plans and exit statuses; the [installation contract](docs/installation.md) explains ownership and recovery. The repeatable [v0.1 release checklist](docs/release-checklist.md) remains blocked on recorded platform evidence and an independent fresh-user review.
 
-## Planned direction
+## Remaining release work
 
-The current v0.1 direction includes:
+- Add explicit Kubuntu 26.04 x86_64 detection, coverage, and isolated lifecycle evidence under [issue #36](https://github.com/kodiakdirus/byte-core/issues/36). It is planned v0.1 work, not a currently accepted host.
+- Record reviewed manual evidence for the supported target platforms, including preservation, backout, and offline behavior.
+- Complete an independent fresh-user review and resolve its findings under [issue #5](https://github.com/kodiakdirus/byte-core/issues/5).
+- Resolve remaining acceptance criteria and implementation gaps, review the exact candidate, and pass the final release gate before approving `v0.1.0`.
 
-- a thin POSIX-compatible launcher backed by Python 3;
-- standard-library-first implementation with no third-party runtime dependencies by default;
-- initial support targets for macOS 15 and 26 on Apple silicon and Ubuntu 24.04 on x86_64;
-- initial shell integration for Bash and Zsh;
-- layered, deployment-owned configuration and inventory;
-- reversible install, update, validation, and removal behavior; and
-- privacy-preserving diagnostics and issue reporting.
-
-The initial lifecycle proof implements `check`, guided `init`, read-only initialization, installation, update, shell-integration, and removal planning, exact-plan initialization, installation, update, removal, and shell apply/verification, guided local update checking/application, reversible shell removal, local-only diagnostics with optional reviewed GitHub issue transport, and a preservation-only deployment `remove` check. Their [grammar, exit statuses, mutation boundaries, and recovery behavior](docs/cli.md) are documented. Remote update discovery and automatic diagnostics remain unimplemented.
+Remote update discovery, automatic diagnostic collection/reporting, configuration migration, artifact signing, package-manager installation, and production support remain unavailable. The component contracts describe narrower implementation limits, including configuration path validation, shell verification, and Byte Care version reporting.
 
 The first bootstrap release, [`v0.0.1`](https://github.com/kodiakdirus/byte-core/releases/tag/v0.0.1), is published as a pre-release with no release assets. It records the repository bootstrap and is not a functional Byte Core release.
 

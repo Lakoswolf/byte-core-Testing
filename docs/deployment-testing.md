@@ -2,6 +2,8 @@
 
 This guide is the public handoff for manual supported-platform testing. It uses a fresh checkout, a deterministic candidate artifact, disposable fictional roots, and exact plans. It does not install Byte into operating-system directories, require elevated privileges, or claim that 0.1.0 has been released.
 
+If this is your first encounter with Byte, begin with [Your first session with Byte](getting-started.md). It explains the project, provides a Codex-guided introduction, and walks through a small example before this full acceptance test. Start this test with a fresh disposable root after completing that introduction.
+
 Use only a disposable test environment. Do not substitute real deployment configuration, inventory, credentials, logs, or documentation.
 
 ## Supported test targets
@@ -11,6 +13,8 @@ Use only a disposable test environment. Do not substitute real deployment config
 - macOS 26 on Apple silicon (`arm64`), using Zsh
 
 Python 3.11 through 3.14 and Git must be available. Optional Zsh syntax highlighting is not part of this smoke test and is never installed by Byte.
+
+These are the currently implemented targets. Kubuntu 26.04 is planned v0.1 work and is not yet covered by this guide or the ledger; see the [support matrix](support-matrix.md#planned-v01-target-addition). Keep the source checkout for build scripts and evidence templates, which are not included in the candidate archive.
 
 ## 1. Prepare a reviewed checkout
 
