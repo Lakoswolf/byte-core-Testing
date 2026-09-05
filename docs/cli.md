@@ -2,7 +2,7 @@
 
 Byte Core uses one `byte` command for lifecycle operations. The command separates checking, planning, applying, verifying, and backing out changes so that read-only discovery cannot silently become mutation.
 
-The current bootstrap implements `check`, the initial deployment lifecycle, and experimental exact-plan installation and update apply and verification proofs. Destructive removal, the top-level update workflow, and diagnostics remain reserved design commitments, not functional capabilities.
+The current bootstrap implements `check`, guided initialization, exact-plan installation, update and removal, reversible shell integration, and local diagnostics with optional reviewed GitHub reporting. These remain experimental proofs, not a supported installed CLI. For a guided introduction, start with [Your first session with Byte](getting-started.md).
 
 ## Grammar
 
@@ -47,9 +47,9 @@ Commands may add structured error codes without changing these process-level cat
 
 ## Output contract
 
-Human-readable text is the default. `--format json` emits one JSON object with stable field names for tests and automation. JSON output is UTF-8, uses deterministic key ordering, and is written to standard output. Usage and internal failures use standard error.
+Human-readable text is the default for commands that offer a format option. Planning commands emit JSON directly; `--format json` selects a JSON result on supported noninteractive result paths. JSON uses UTF-8, deterministic key ordering, and standard output. Guided initialization/update and report-review prompts use text; host-readiness refusals before mutation also currently use text even when JSON was requested. Callers must inspect the exit status before parsing. Usage and internal failures use standard error.
 
-Output must not include credentials, environment-variable contents, usernames, home-directory paths, private inventory, arbitrary command output, or inferred deployment facts.
+Environment-check summaries and diagnostic payloads exclude credentials, environment-variable contents, usernames, home-directory paths, private inventory, arbitrary command output, and inferred deployment facts. Exact plans, interactive target/destination previews, lifecycle JSON results, and initialization recovery guidance contain explicit local paths needed for review. Shell plans also include the proposed managed block. These outputs are private local artifacts, not public diagnostics; never publish them as a transcript or report. Usage errors may repeat supplied arguments, so do not put secrets in command arguments.
 
 ## `byte check`
 
@@ -141,7 +141,7 @@ The descriptor and artifact checksums detect mismatch and accidental modificatio
 
 The `byte shell` namespace applies the same separation to Bash and Zsh profile integration. `plan` and `plan-remove` are read-only and emit exact private-local JSON plans. `apply`, `verify`, and `remove` load those plans without guessing a home directory or profile.
 
-Apply and remove preserve unrelated profile content, use distinct recoverable backups, retain the original profile mode, and refuse changes made after planning. Exact replay is idempotent. A malformed, duplicate, stale, missing, or linked managed block is refused.
+Apply and remove preserve unrelated profile content, use distinct recoverable backups, write the profile mode recorded during planning, and refuse changes to profile existence or bytes made after planning. Exact replay is idempotent. A malformed, duplicate, stale, missing, or linked managed block is refused. Permission-only drift and changes to sourced script bytes are not covered by current shell verification; see the shell contract.
 
 Zsh syntax highlighting is included only when the operator supplies `--syntax-highlighting` during planning. Byte does not require Zsh on Linux, install packages, modify the login shell, or add syntax highlighting implicitly. The full boundary is documented in the [shell-integration contract](shell-integration.md).
 
@@ -151,6 +151,6 @@ Zsh syntax highlighting is included only when the operator supplies `--syntax-hi
 
 Every invocation requires an explicit mode. `off` writes nothing. `local-only` privacy-scans and stores the report under an explicit private-local root. `ask-before-reporting` displays the exact JSON and destination and requires the full stable fingerprint before local storage. `automatic-sanitized` is refused because automatic outbound reporting is unsupported.
 
-Local doctor modes do not access the network. `--github-dry-run` uses the user's authenticated `gh` session to search the official repository and display the exact deduplicated create/comment action without mutation. `--github-submit` additionally requires the full fingerprint, preserves the exact Markdown locally, rate-limits retries, and then asks `gh` to perform that reviewed action. GitHub authorizes the user's own account; Byte ships no token. No mode deploys a fix. See the [Byte Care contract](byte-care.md) for schema, storage, consent, transport, and hard-crash limitations.
+Local doctor modes do not access the network. `--github-dry-run` uses the user's authenticated `gh` session to search up to 100 open issues in the official repository and display the proposed create/comment action without GitHub mutation; local report storage still follows the selected mode. `--github-submit` additionally requires the full fingerprint, preserves the exact Markdown locally, limits retries after recorded success, and then asks `gh` to perform that reviewed action. GitHub authorizes the user's own account; Byte ships no token. No mode deploys a fix. See the [Byte Care contract](byte-care.md) for schema, storage, consent, version reporting, transport, and hard-crash limitations.
 
-These reserved descriptions do not imply implementation.
+Remote update discovery and automatic outbound reporting remain unavailable.

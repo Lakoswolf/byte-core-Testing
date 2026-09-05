@@ -7,7 +7,7 @@ Byte Core is independent and is not affiliated with or endorsed by OpenAI. Its v
 | Surface | v0.1 status | Ownership and purpose |
 | --- | --- | --- |
 | Repository `AGENTS.md` | Supported | Public durable repository layout, validation, ownership, and safety guidance |
-| Project `.codex/config.toml` | Supported when the user trusts the project | Enables only the repository SessionStart hook |
+| Project `.codex/config.toml` | Configured; requires project and hook trust | Enables only the repository SessionStart hook |
 | Project SessionStart hook | Advisory proof | Emits generic safety context; never blocks tools, mutates files, or collects private context |
 | Byte skill | Deferred | No stable repeated workflow currently benefits from duplicating the CLI and `AGENTS.md` contracts |
 | Plugin package | Deferred beyond repository-native MVP validation | No v0.1 plugin, marketplace, app, bundled credential, or auto-install behavior |
@@ -18,9 +18,9 @@ The repository does not select a model, reasoning level, provider, credential me
 
 ## Trust and degradation
 
-Codex loads project `.codex/` configuration and project hooks only after the project is trusted. In an untrusted project—or in a Codex version or surface that does not load the configuration—the Python CLI, validators, plans, tests, documentation, and shell assets continue to work unchanged.
+Codex loads project `.codex/` configuration only for trusted projects. Current Codex also requires review and trust of the exact non-managed hook definition; a new or changed hook is skipped until trusted. See the official [configuration precedence](https://learn.chatgpt.com/docs/config-file/config-basic) and [hook trust rules](https://learn.chatgpt.com/docs/hooks). In an untrusted project, with an untrusted hook, or in a Codex version or surface that does not load the configuration, the Python CLI, validators, plans, tests, documentation, and shell assets continue to work unchanged.
 
-The project configuration enables the stable hooks feature and registers one `SessionStart` command. It does not broaden filesystem or network access and does not bypass approvals.
+The project configuration enables the `hooks` feature and registers one `SessionStart` command. It does not broaden filesystem or network access and does not bypass approvals.
 
 ## SessionStart hook
 
@@ -31,11 +31,15 @@ The hook reads one bounded JSON object from standard input. It checks only:
 
 It deliberately ignores session IDs, working-directory values, model names, permission metadata, and `transcript_path`. It never opens the transcript or any deployment file. Valid input produces one generic repository-safety `systemMessage`.
 
-Malformed, oversized, unknown, and future input exits successfully with a generic fallback message directing Codex to `AGENTS.md`. This keeps the hook advisory and prevents failure loops. It writes no file, report, log, cache, or network request.
+Invalid JSON, oversized input, unknown events, and unknown string-valued sources exit successfully with a generic fallback message directing Codex to `AGENTS.md`. The hook writes no file, report, log, cache, or network request.
+
+Graceful degradation is incomplete for malformed field types: an array or object in `source` currently raises `TypeError` during membership checking instead of emitting the fallback. This is an unresolved implementation defect, not an exception to the requirement that integration degrade safely. A hook failure never authorizes mutation, publication, or reporting; the repository guidance and CLI remain the fallback.
 
 ## Testing and compatibility
 
-Tests parse project TOML, validate the configured hook path and event, run public fictional fixtures through the hook, prove the transcript path is ignored, and verify malformed/future events degrade without failure.
+Tests parse project TOML, validate the configured hook path and event, run public fictional fixtures through the hook, prove the transcript path is ignored, and verify fallback for the invalid-JSON and future-event cases they cover. They do not cover every malformed field type.
+
+These tests exercise the hook directly. They do not prove that a particular Codex app or CLI version loaded it in a live session. That integration and the guided first-user behavior still require manual evidence. The configured command locates the hook through a Git checkout; an extracted candidate alone is not a verified Codex project-hook installation.
 
 Hook schemas can evolve. Byte accepts only the small documented subset it needs and ignores extra keys. Changes to the hook event or output contract require a new reviewed integration slice. Core functionality must never depend on hook execution.
 

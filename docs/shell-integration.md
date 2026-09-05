@@ -15,7 +15,7 @@ The asset contains no hostnames, usernames, addresses, inventory, credentials, o
 
 Planning requires an explicit existing home root, `bash` or `zsh`, and an absolute readable shell-asset path. Bash targets `.bashrc`; Zsh targets `.zshrc`. A plan records the exact original profile checksum and mode, generated block, expected result checksum, preconditions, postconditions, backout rule, and content-bound plan ID.
 
-Apply refuses any profile change after planning. It creates a mode-`0600` backup under `.byte-backups/` before atomically replacing the profile while preserving its prior mode. Existing content is retained byte-for-byte. Reapplying an exact plan is idempotent.
+Apply refuses changes to profile existence or bytes after planning. It creates a mode-`0600` backup under `.byte-backups/` before atomically replacing the profile using the mode recorded in the plan. Existing content is retained byte-for-byte. Reapplying an exact plan is idempotent.
 
 Removal has a separate read-only planning phase and a distinct removal backup. It accepts exactly one well-formed Byte block, preserves all unrelated content byte-for-byte, and restores profile absence when installation created a previously missing profile. Missing, duplicate, malformed, stale, or altered blocks are refused.
 
@@ -30,3 +30,5 @@ Bash plans reject this option. Byte does not locate, download, install, upgrade,
 ## Current boundary
 
 This is an internal bootstrap proof, not a supported installed shell product. It does not customize prompts, discover repositories, execute inventory commands, install completions, alter shell history, or modify appliance hosts.
+
+Current shell verification checks profile bytes and managed-block presence, not permission-only drift or the contents of the sourced shell and syntax-highlighting files. Plans bind those source paths but do not checksum their contents. Review those explicit files before sourcing them. Removal restores profile absence or unrelated content, but keeps its private backup files for recovery.

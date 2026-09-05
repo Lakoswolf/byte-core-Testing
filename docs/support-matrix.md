@@ -35,6 +35,10 @@ Before a functional v0.1 release, the release gate still requires recorded manua
 
 The current ledger intentionally records all three targets as pending in `release/v0.1/manual-evidence.json`. The final gate and record format are defined in the [release checklist](release-checklist.md); no pending entry is support evidence.
 
+## Planned v0.1 target addition
+
+[Issue #36](https://github.com/kodiakdirus/byte-core/issues/36) requires explicit Kubuntu 26.04 x86_64 support and isolated native lifecycle testing before v0.1. Detection, CI coverage, and the evidence ledger have not yet been extended for that target. The current Linux check reads operating-system `ID` and `VERSION_ID`; it does not distinguish Kubuntu intentionally. An Ubuntu-derived identifier is not Kubuntu support evidence. The three-target ledger and checker do not by themselves cover this additional release criterion.
+
 ## Expanding support
 
 A new host combination becomes a supported target only through a reviewed change that adds deterministic detection, automated coverage where feasible, documented manual evidence requirements, and known limitations. Recognition by `platform.system()` or `platform.machine()` alone is not evidence of support.

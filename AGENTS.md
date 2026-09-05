@@ -52,6 +52,18 @@ Keep destructive targets explicit. Preserve unrelated user work. Do not claim su
 
 Separate repository planning from implementation when a checkpoint requires review. Do not expand work into adjacent issues without approval.
 
+## Documentation stays with the change
+
+Documentation accuracy is part of completion. Every change to behavior, commands, configuration, support boundaries, or release status must include the corresponding documentation updates in the same change or pull request.
+
+- Identify affected documentation while planning. Review the root README capability table, any affected component READMEs and contracts, the first-session guide, and release notes as applicable.
+- Describe implemented behavior and known limitations accurately. Keep planned features, experimental proofs, supported capabilities, and validated release evidence distinct. Remove stale claims when behavior changes.
+- Keep platform documentation, CI targets, release-checker targets, and the evidence ledger consistent when support changes. Never mark evidence complete without the required reviewed observations.
+- Verify affected command examples and links against the implementation. Check the packaged documentation too when artifact contents or relative links are affected. State any manual or platform validation that remains unavailable.
+- Summarize documentation impact in the completion report or pull request. If no documentation change is needed, state why. Do not defer required documentation to an unspecified follow-up or call the work complete while it is stale.
+
+This rule applies only to Core-owned public material. It never authorizes reading, importing, or rewriting deployment-owned documentation or private source material. Record newly discovered implementation gaps truthfully; documenting a gap does not fulfill an unmet safety requirement or authorize unrelated implementation work.
+
 ## Completion evidence
 
 Before claiming a change is complete:
