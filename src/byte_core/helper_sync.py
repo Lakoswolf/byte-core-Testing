@@ -27,8 +27,9 @@ def _digest(value):
 
 def _git(path, *args, allowed=(0,)):
     # Ambient Git overrides must not redirect the explicitly approved repository.
+    config_selectors = {"GIT_CONFIG_NOSYSTEM", "GIT_CONFIG_SYSTEM", "GIT_CONFIG_GLOBAL"}
     environment = {key: value for key, value in os.environ.items()
-                   if not key.startswith("GIT_")}
+                   if not key.startswith("GIT_") or key in config_selectors}
     environment.update(GIT_TERMINAL_PROMPT="0", GIT_OPTIONAL_LOCKS="0", LC_ALL="C")
     process = None
     try:

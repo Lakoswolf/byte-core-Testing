@@ -58,6 +58,16 @@ class SyncTests(unittest.TestCase):
         self.git(self.seed, "push", "origin", "main")
         return tip
 
+    def test_explicit_configuration_files_are_honored_without_repository_redirection(self):
+        system = self.root / "fictional-system-config"
+        system.write_text('[filter "fictional"]\nclean = cat\n')
+        with mock.patch.dict(os.environ, {"GIT_CONFIG_SYSTEM": str(system),
+                                         "GIT_CONFIG_NOSYSTEM": "1", "GIT_DIR": str(self.remote)}):
+            self.assertEqual(sync.plan(self.config)["repositories"][0]["repository"]["path"], str(self.local))
+        with mock.patch.dict(os.environ, {"GIT_CONFIG_GLOBAL": str(system)}):
+            with self.assertRaisesRegex(sync.SyncError, "filters_unsupported"):
+                sync.plan(self.config)
+
     def test_plan_offline_and_apply_fast_forward(self):
         wanted = self.advance()
         before = self.git(self.local, "rev-parse", "HEAD")
