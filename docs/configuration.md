@@ -25,7 +25,7 @@ New and rewritten scripts, shell helpers, and apps must expose ordinary deployme
 - Make optional shell features independently selectable. Preserve existing user preferences and define how disabling or reloading a feature restores or retains its state.
 - Validate the resolved settings before an operation and show the relevant targets during planning. Configuring a device, relay, repository, or executable does not authorize its use. Safety invariants remain enforced in code.
 
-The experimental [shell helpers](helpers.md) implement a separate, explicitly selected `helpers.toml` interface with a starter template and read-only validation. It is not a layer of `deployment.toml`: do not add helper keys to the existing layered resolver's files. Helper paths explicitly allow absolute paths and reject parent traversal; they do not expand variables or home-directory shorthand. The helper file's selection uses `--config` before `BYTE_CORE_HELPERS_CONFIG`, then generic defaults if neither is supplied. No automatic file discovery or configuration writing occurs.
+The experimental [shell helpers](helpers.md) implement a separate, explicitly selected `helpers.toml` interface with a starter template and read-only validation. It is not a layer of `deployment.toml`: do not add helper keys to the existing layered resolver's files. Helper paths explicitly allow absolute paths and reject parent traversal; they do not expand variables or home-directory shorthand. The helper file's selection uses `--config` before `BYTE_CORE_HELPERS_CONFIG`, then generic defaults if neither is supplied. There is no automatic file discovery or implicit configuration writing. Optional [guided setup](setup.md) checks prepared choices and, after exact-plan approval, creates a new mode-`0600` helper file from the original validated bytes without overwriting existing configuration.
 
 ## Logical roots
 
@@ -54,7 +54,7 @@ Byte Core updates may replace a Core-managed file only when the file is listed i
 
 Deployment-owned content includes configuration, identity, inventory, canonical documentation, credential references, and operator-authored extensions. The optional [inventory backend](inventory.md) stores explicit JSON observations and reviewed catalog snapshots outside Core; it does not add configuration keys, discover configuration layers, or change this resolver's schema.
 
-Byte Core may create a deployment-owned file only through an explicit initialization or migration plan. Once created, the file remains deployment-owned. Routine installation and update operations must not overwrite it.
+Byte Core may create a deployment-owned file only through an explicit initialization, helper-setup, or future migration plan. Once created, the file remains deployment-owned. Routine installation and update operations must not overwrite it. Helper setup preserves the prepared TOML's comments and line endings, and its byte verification reports later customization as a change rather than rewriting it.
 
 A newer Core template does not authorize replacement of a file previously created from an older template.
 
@@ -107,7 +107,9 @@ Routine Core updates must not silently migrate deployment-owned configuration. N
 
 The intended configuration path contract uses UTF-8 text and `/` as the logical separator, with relative paths resolved against `DEPLOYMENT_ROOT`.
 
-The path contract requires rejection of absolute paths, parent traversal, environment expansion, and implicit home-directory expansion unless a future schema explicitly authorizes a field otherwise. The current internal resolver checks `paths.workspace` only as a string; it does not yet enforce those path restrictions or resolve the string against a deployment root. This is an implementation gap, and resolved configuration must not be treated as authorization for filesystem operations.
+The internal resolver validates `paths.workspace` in every participating layer, including values later overridden. It accepts a nonempty UTF-8 relative path using `/` separators, up to 4096 characters. Absolute/drive-qualified paths, parent traversal, empty or dot components, backslashes, control characters, home shorthand, and variable/command-expansion syntax are refused. Other helper-file path fields use their separately documented absolute-path schema.
+
+The internal `resolve_workspace_path(configuration, deployment_root)` API resolves this value against an explicit existing absolute deployment directory. It refuses symlinked roots or path components, file components, and targets outside that root. Missing workspace directories are allowed but are not created. Resolving a value does not authorize an operation, prove the target's purpose, or lock its identity against concurrent changes; operational callers must revalidate before mutation. There is no automatic deployment-root selection or public layered-configuration command.
 
 Before mutation, Byte Core resolves the exact filesystem target and verifies containment after accounting for symbolic links. A configured path does not prove that the target exists or establish facts about its contents.
 

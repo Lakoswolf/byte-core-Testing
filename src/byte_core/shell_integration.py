@@ -11,7 +11,8 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
-SHELL_PLAN_SCHEMA_VERSION = 1
+SHELL_PLAN_SCHEMA_VERSION = 2
+MAX_SOURCE_BYTES = 4 * 1024 * 1024
 MAX_PROFILE_BYTES = 1024 * 1024
 MAX_PLAN_BYTES = 1024 * 1024
 START_MARKER = "# >>> Byte Core managed shell integration >>>"
@@ -23,6 +24,13 @@ class ShellIntegrationError(Exception):
     def __init__(self, code: str) -> None:
         self.code = code
         super().__init__(code)
+
+
+@dataclass(frozen=True)
+class ShellSource:
+    path: str
+    sha256: str
+    mode: int
 
 
 @dataclass(frozen=True)
@@ -45,6 +53,7 @@ class ShellPlan:
     postconditions: tuple[str, ...]
     backout: tuple[str, ...]
     plan_id: str
+    source_files: tuple[ShellSource, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -81,8 +90,8 @@ def build_shell_install_plan(
     return _make_plan(
         "shell_install", shell, home, profile, script, syntax,
         original_exists, profile_mode, original, block, True, result,
-        ("profile_unchanged", "managed_block_absent"),
-        ("managed_block_exact", "unrelated_content_preserved"),
+        ("profile_unchanged", "managed_block_absent", "source_files_unchanged"),
+        ("managed_block_exact", "unrelated_content_preserved", "source_files_unchanged"),
         ("restore_unchanged_profile_from_apply_backup",),
     )
 
@@ -123,10 +132,12 @@ def load_shell_plan(path: str | os.PathLike[str]) -> ShellPlan:
         "profile_mode", "original_sha256", "managed_block",
         "managed_block_sha256", "result_exists",
         "result_sha256", "preconditions", "postconditions", "backout",
-        "plan_id",
+        "plan_id", "source_files",
     }
     if type(raw) is not dict or set(raw) != keys:
         raise ShellIntegrationError("invalid_plan")
+    if type(raw["schema_version"]) is not int or raw["schema_version"] != SHELL_PLAN_SCHEMA_VERSION:
+        raise ShellIntegrationError("unsupported_plan")
     plan = ShellPlan(
         raw["schema_version"], raw["operation"], raw["shell"],
         raw["home_root"], raw["profile_path"], raw["shell_script_path"],
@@ -137,6 +148,7 @@ def load_shell_plan(path: str | os.PathLike[str]) -> ShellPlan:
         _string_tuple(raw["preconditions"]),
         _string_tuple(raw["postconditions"]),
         _string_tuple(raw["backout"]), raw["plan_id"],
+        _source_tuple(raw["source_files"]),
     )
     _validate_plan(plan)
     return plan
@@ -145,9 +157,11 @@ def load_shell_plan(path: str | os.PathLike[str]) -> ShellPlan:
 def apply_shell_plan(plan: ShellPlan) -> ShellResult:
     _validate_plan(plan)
     profile = Path(plan.profile_path)
-    exists, original, _ = _profile_state(profile)
+    _verify_sources(plan)
+    exists, original, mode = _profile_state(profile)
     if (
         exists == plan.result_exists
+        and (not exists or mode == plan.profile_mode)
         and _digest(original) == plan.result_sha256
         and (
             (plan.operation == "shell_install"
@@ -161,9 +175,14 @@ def apply_shell_plan(plan: ShellPlan) -> ShellResult:
             else "already_removed",
             plan.plan_id, plan.profile_path, _backup_path(plan),
         )
-    if exists != plan.original_exists or _digest(original) != plan.original_sha256:
+    if (exists != plan.original_exists or _digest(original) != plan.original_sha256
+            or (exists and mode != plan.profile_mode)):
         raise ShellIntegrationError("profile_changed")
     result = _result_bytes(plan, original)
+    if len(result) > MAX_PROFILE_BYTES:
+        raise ShellIntegrationError("file_too_large")
+    if _digest(result) != plan.result_sha256:
+        raise ShellIntegrationError("plan_integrity_failed")
     backup = Path(_backup_path(plan))
     if backup.parent.exists():
         if backup.parent.is_symlink() or not backup.parent.is_dir():
@@ -221,6 +240,12 @@ def _make_plan(
     postconditions: tuple[str, ...],
     backout: tuple[str, ...],
 ) -> ShellPlan:
+    if len(result) > MAX_PROFILE_BYTES:
+        raise ShellIntegrationError("file_too_large")
+    source_files = (
+        tuple(_source_state(path) for path in _source_paths(script, syntax, shell))
+        if operation == "shell_install" else ()
+    )
     unsigned = {
         "schema_version": SHELL_PLAN_SCHEMA_VERSION,
         "operation": operation,
@@ -239,6 +264,7 @@ def _make_plan(
         "preconditions": list(preconditions),
         "postconditions": list(postconditions),
         "backout": list(backout),
+        "source_files": [asdict(source) for source in source_files],
     }
     return ShellPlan(
         SHELL_PLAN_SCHEMA_VERSION, operation, shell, str(home), str(profile),
@@ -247,13 +273,14 @@ def _make_plan(
         unsigned["managed_block_sha256"],
         result_exists, unsigned["result_sha256"],
         preconditions, postconditions, backout,
-        _digest(_canonical_json(unsigned).encode()),
+        _digest(_canonical_json(unsigned).encode()), source_files,
     )
 
 
 def _validate_plan(plan: ShellPlan) -> None:
     if (
-        plan.schema_version != SHELL_PLAN_SCHEMA_VERSION
+        type(plan.schema_version) is not int
+        or plan.schema_version != SHELL_PLAN_SCHEMA_VERSION
         or plan.operation not in ("shell_install", "shell_remove")
         or plan.shell not in ("bash", "zsh")
         or type(plan.original_exists) is not bool
@@ -263,6 +290,15 @@ def _validate_plan(plan: ShellPlan) -> None:
         or plan.profile_mode > 0o777
     ):
         raise ShellIntegrationError("unsupported_plan")
+    if any(type(value) is not str for value in (
+        plan.operation, plan.shell, plan.home_root, plan.profile_path,
+        plan.shell_script_path, plan.managed_block,
+    )) or (plan.syntax_highlighting_path is not None
+           and type(plan.syntax_highlighting_path) is not str):
+        raise ShellIntegrationError("invalid_plan")
+    for conditions in (plan.preconditions, plan.postconditions, plan.backout):
+        if type(conditions) is not tuple or any(type(item) is not str for item in conditions):
+            raise ShellIntegrationError("invalid_plan")
     home = _existing_directory(plan.home_root, "invalid_plan")
     if Path(plan.profile_path) != _profile_path(home, plan.shell):
         raise ShellIntegrationError("invalid_plan")
@@ -271,9 +307,26 @@ def _validate_plan(plan: ShellPlan) -> None:
         raise ShellIntegrationError("invalid_plan")
     if (None if syntax is None else str(syntax)) != plan.syntax_highlighting_path:
         raise ShellIntegrationError("invalid_plan")
-    _regular_file(script, "invalid_shell_script")
-    if syntax is not None:
-        _regular_file(syntax, "invalid_syntax_highlighting")
+    expected_paths = (
+        tuple(str(path) for path in _source_paths(script, syntax, plan.shell))
+        if plan.operation == "shell_install" else ()
+    )
+    if (type(plan.source_files) is not tuple
+            or any(type(source) is not ShellSource for source in plan.source_files)
+            or tuple(source.path for source in plan.source_files) != expected_paths):
+        raise ShellIntegrationError("invalid_plan")
+    for source in plan.source_files:
+        if (type(source.sha256) is not str or not _DIGEST.fullmatch(source.sha256)
+                or type(source.mode) is not int or not 0 <= source.mode <= 0o777):
+            raise ShellIntegrationError("invalid_plan")
+    if plan.operation == "shell_install" and (
+        not plan.result_exists
+        or _block_original_exists(plan.managed_block) != plan.original_exists
+        or (not plan.original_exists and plan.profile_mode != 0o600)
+    ):
+        raise ShellIntegrationError("invalid_plan")
+    if plan.operation == "shell_remove" and not plan.original_exists:
+        raise ShellIntegrationError("invalid_plan")
     if any(
         type(value) is not str or not _DIGEST.fullmatch(value)
         for value in (
@@ -291,13 +344,10 @@ def _validate_plan(plan: ShellPlan) -> None:
 
 
 def _verify_result(plan: ShellPlan) -> None:
-    if not plan.result_exists:
-        if Path(plan.profile_path).exists():
-            raise ShellIntegrationError("profile_changed")
-        return
-    profile = _regular_file(plan.profile_path, "profile_missing")
-    content = _read_bounded(profile, MAX_PROFILE_BYTES)
-    if _digest(content) != plan.result_sha256:
+    _verify_sources(plan)
+    exists, content, mode = _profile_state(Path(plan.profile_path))
+    if (exists != plan.result_exists or _digest(content) != plan.result_sha256
+            or (exists and mode != plan.profile_mode)):
         raise ShellIntegrationError("profile_changed")
     occurrences = content.count(plan.managed_block.encode("utf-8"))
     if (
@@ -305,6 +355,56 @@ def _verify_result(plan: ShellPlan) -> None:
         or (plan.operation == "shell_remove" and occurrences != 0)
     ):
         raise ShellIntegrationError("managed_block_mismatch")
+
+
+def _source_paths(script: Path, syntax: Path | None, shell: str) -> tuple[Path, ...]:
+    # A fixed Core dependency contract, never recursive shell-code discovery.
+    paths = [script]
+    if script.name == "byte-shell.sh":
+        paths.append(script.with_name(
+            "byte-shell-bash.sh" if shell == "bash" else "byte-shell-zsh.zsh"
+        ))
+    if syntax is not None and syntax not in paths:
+        paths.append(syntax)
+    return tuple(paths)
+
+
+def _source_state(path: Path) -> ShellSource:
+    regular = _regular_file(path, "invalid_source_file")
+    # Preserve the selected path: resolving a replacement parent symlink must
+    # not silently redirect a previously reviewed source.
+    if regular != path:
+        raise ShellIntegrationError("invalid_source_file")
+    before = regular.stat()
+    data = _read_bounded(regular, MAX_SOURCE_BYTES)
+    after = regular.stat()
+    if (before.st_dev, before.st_ino, before.st_mode, before.st_mtime_ns) != (
+        after.st_dev, after.st_ino, after.st_mode, after.st_mtime_ns
+    ):
+        raise ShellIntegrationError("file_changed_during_read")
+    mode = stat.S_IMODE(after.st_mode)
+    if mode > 0o777:
+        raise ShellIntegrationError("invalid_source_file")
+    return ShellSource(str(path), _digest(data), mode)
+
+
+def _verify_sources(plan: ShellPlan) -> None:
+    for source in plan.source_files:
+        try:
+            current = _source_state(Path(source.path))
+        except (ShellIntegrationError, OSError) as error:
+            raise ShellIntegrationError("source_changed") from error
+        if current != source:
+            raise ShellIntegrationError("source_changed")
+
+
+def _source_tuple(value: Any) -> tuple[ShellSource, ...]:
+    if type(value) is not list or any(
+        type(item) is not dict or set(item) != {"path", "sha256", "mode"}
+        or type(item["path"]) is not str for item in value
+    ):
+        raise ShellIntegrationError("invalid_plan")
+    return tuple(ShellSource(**item) for item in value)
 
 
 def _result_bytes(plan: ShellPlan, original: bytes) -> bytes:
@@ -371,27 +471,36 @@ def _parse_source_line(line: str) -> Path:
     encoded = line[3:-1]
     value = encoded.replace("'\"'\"'", "'")
     path = Path(value)
-    if not path.is_absolute() or "\n" in value:
+    if (not path.is_absolute() or "\n" in value or "\r" in value
+            or "\0" in value or line != ". " + _shell_quote(value)):
         raise ShellIntegrationError("malformed_managed_block")
     return path
 
 
 def _extract_block(content: bytes) -> str:
-    try:
-        text = content.decode("utf-8")
-    except UnicodeDecodeError as error:
-        raise ShellIntegrationError("invalid_profile") from error
-    if text.count(START_MARKER) != 1 or text.count(END_MARKER) != 1:
+    # Profile bytes belong to the operator and need not use Core's encoding.
+    # Only the managed block is UTF-8; inspect markers without decoding anything
+    # outside it so removal can preserve legacy comments and other unrelated data.
+    start_marker = START_MARKER.encode("utf-8")
+    end_marker = END_MARKER.encode("utf-8")
+    if content.count(start_marker) != 1 or content.count(end_marker) != 1:
         raise ShellIntegrationError(
             "managed_block_absent"
-            if START_MARKER not in text and END_MARKER not in text
+            if start_marker not in content and end_marker not in content
             else "malformed_managed_block"
         )
-    start = text.index(START_MARKER)
-    end = text.index(END_MARKER, start) + len(END_MARKER)
-    if end < len(text) and text[end] == "\n":
+    start = content.index(start_marker)
+    if content.index(end_marker) < start or (start and content[start - 1:start] != b"\n"):
+        raise ShellIntegrationError("malformed_managed_block")
+    end = content.index(end_marker, start) + len(end_marker)
+    if end < len(content) and content[end:end + 1] != b"\n":
+        raise ShellIntegrationError("malformed_managed_block")
+    if end < len(content):
         end += 1
-    return text[start:end]
+    try:
+        return content[start:end].decode("utf-8")
+    except UnicodeDecodeError as error:
+        raise ShellIntegrationError("malformed_managed_block") from error
 
 
 def _remove_block(content: bytes, block: str) -> bytes:
@@ -464,10 +573,9 @@ def _restore_profile(
 ) -> bool:
     profile = Path(plan.profile_path)
     try:
-        if plan.result_exists:
-            if _read_bounded(profile, MAX_PROFILE_BYTES) != expected:
-                return False
-        elif profile.exists():
+        exists, current, mode = _profile_state(profile)
+        if (exists != plan.result_exists or current != expected
+                or (exists and mode != plan.profile_mode)):
             return False
         if plan.original_exists:
             _replace_file(profile, original, plan.profile_mode)
@@ -521,8 +629,8 @@ def _read_bounded(path: Path, maximum: int) -> bytes:
         raise ShellIntegrationError("file_read_error") from error
     if (
         len(data) > maximum
-        or (before.st_dev, before.st_ino, before.st_size, before.st_mtime_ns)
-        != (after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns)
+        or (before.st_dev, before.st_ino, before.st_size, before.st_mode, before.st_mtime_ns)
+        != (after.st_dev, after.st_ino, after.st_size, after.st_mode, after.st_mtime_ns)
     ):
         raise ShellIntegrationError("file_changed_during_read")
     return data

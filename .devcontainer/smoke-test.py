@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -11,11 +12,20 @@ import sys
 import tempfile
 
 REPOSITORY = Path(__file__).resolve().parents[1]
+TEST_ENV = {
+    "PATH": str(Path(sys.executable).parent) + os.pathsep + os.defpath,
+    "LC_ALL": "C",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "GIT_CONFIG_NOSYSTEM": "1",
+    "GIT_CONFIG_GLOBAL": os.devnull,
+    "GIT_CONFIG_SYSTEM": os.devnull,
+}
 
 
 def run(arguments: list[str], *, expected: int = 0) -> str:
     result = subprocess.run(
-        arguments, cwd=REPOSITORY, text=True, capture_output=True, check=False
+        arguments, cwd=REPOSITORY, env=TEST_ENV,
+        text=True, capture_output=True, check=False
     )
     if result.returncode != expected:
         raise RuntimeError("command did not return the expected exit status")
@@ -40,6 +50,13 @@ def main() -> int:
     root = Path(tempfile.mkdtemp(prefix="byte-container-smoke-")).resolve()
     stage = "candidate construction"
     try:
+        for variable, name in (("HOME", "process-home"), ("XDG_CONFIG_HOME", "config"),
+                               ("XDG_CACHE_HOME", "cache"), ("XDG_STATE_HOME", "logs"),
+                               ("XDG_RUNTIME_DIR", "runtime"), ("TMPDIR", "temporary")):
+            directory = root / name
+            directory.mkdir(mode=0o700)
+            TEST_ENV[variable] = str(directory)
+        TEST_ENV["ZDOTDIR"] = TEST_ENV["HOME"]
         artifact = root / "artifact"
         run([
             sys.executable, "scripts/build_release_artifact.py",
@@ -56,6 +73,7 @@ def main() -> int:
             sys.executable, "scripts/package_release_candidate.py",
             "--artifact", str(artifact), "--output", str(archive),
         ])
+        print("Candidate archive SHA-256: " + hashlib.sha256(archive.read_bytes()).hexdigest())
         extracted = root / "extracted"
         extracted.mkdir()
         run(["tar", "-xzf", str(archive), "-C", str(extracted)])
@@ -67,10 +85,33 @@ def main() -> int:
         stage = "packaged helper configuration and shell assets"
         helper_config = root / "helpers.toml"
         helper_config.write_text(run([byte, "helpers", "config", "example"]), encoding="utf-8")
+        helper_config.chmod(0o600)
         run([byte, "helpers", "--config", str(helper_config), "config", "validate"])
+        readiness = json.loads(run([byte, "setup", "check", "--settings", str(helper_config)]))
+        if not readiness["ready"]:
+            raise RuntimeError("generic helper settings were not ready")
+        installed_settings = root / "configured-helpers.toml"
+        setup_plan = root / "helper-setup-plan.json"
+        setup_plan.write_text(run([
+            byte, "setup", "plan", "--settings", str(helper_config),
+            "--output", str(installed_settings),
+        ]), encoding="utf-8")
+        setup_plan.chmod(0o600)
+        setup_id = json.loads(setup_plan.read_text(encoding="utf-8"))["id"]
+        run([byte, "setup", "apply", "--plan", str(setup_plan), "--approve", "unapproved"], expected=5)
+        if installed_settings.exists():
+            raise RuntimeError("unapproved setup created settings")
+        run([byte, "setup", "apply", "--plan", str(setup_plan), "--approve", setup_id])
+        run([byte, "setup", "verify", "--plan", str(setup_plan)])
+        if (installed_settings.read_bytes() != helper_config.read_bytes()
+                or installed_settings.stat().st_mode & 0o777 != 0o600):
+            raise RuntimeError("setup did not preserve bytes and private mode")
+        run([byte, "setup", "apply", "--plan", str(setup_plan), "--approve", setup_id], expected=5)
+        helper_config = installed_settings
+        print("PASS: packaged setup readiness, exact approval, private settings, and verification")
         for shell in ("bash", "zsh"):
             help_text = run([
-                "env", f"BYTE_CORE_HELPERS_CONFIG={helper_config}", shell, "-c",
+                "env", f"BYTE_CORE_HELPERS_CONFIG={helper_config}", shell, "-f", "-c",
                 '. "$1"; bytehelp; _byte_helpers config validate',
                 "byte-helper-smoke", str(candidate / "shell/byte-shell.sh"),
             ])
@@ -115,6 +156,33 @@ def main() -> int:
         result(["apply", "--plan", str(install)], "already_installed")
         print("PASS: Core installation, verification, and exact replay")
 
+        stage = "offline fixture update through the packaged CLI"
+        fixture_releases = REPOSITORY / "tests/fixtures/installation/releases"
+        update_core = root / "update-core"
+        update_state = root / "update-state"
+        baseline = plan("fixture-install-plan", [
+            "plan", "install", "--artifact-root", str(fixture_releases / "0.1.0"),
+            "--core-root", str(update_core), "--state-root", str(update_state),
+            "--core-version", "0.1.0",
+        ])
+        result(["apply", "--plan", str(baseline)], "installed")
+        update = plan("fixture-update-plan", [
+            "plan", "update", "--manifest", str(update_state / "installation.json"),
+            "--artifact-root", str(fixture_releases / "0.2.0"),
+        ])
+        result(["apply", "--plan", str(update)], "updated")
+        result(["verify", "--plan", str(update)], "verified")
+        result(["apply", "--plan", str(update)], "already_updated")
+        fixture_removal = plan("fixture-remove-plan", [
+            "plan", "remove", "--manifest", str(update_state / "installation.json"),
+            "--preserve-root", str(deployment),
+        ])
+        result(["apply", "--plan", str(fixture_removal)], "removed")
+        result(["verify", "--plan", str(fixture_removal)], "verified")
+        if update_core.exists() or update_state.exists() or digest_files(deployment) != before:
+            raise RuntimeError("fixture update cleanup or preservation failed")
+        print("PASS: fictional two-version update, verification, replay, removal, and preservation")
+
         stage = "shell integration"
         for shell, profile_name in (("bash", ".bashrc"), ("zsh", ".zshrc")):
             home = root / f"{shell}-home"
@@ -133,7 +201,7 @@ def main() -> int:
                 "already_integrated",
             )
             output = run([
-                shell, "-c", '. "$1"; byte_status', "byte-smoke", str(profile),
+                shell, "-f", "-c", '. "$1"; byte_status', "byte-smoke", str(profile),
             ])
             if output.strip() != "Byte shell integration is active.":
                 raise RuntimeError("shell helper did not report integration")

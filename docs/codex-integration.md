@@ -33,13 +33,13 @@ The hook reads one bounded JSON object from standard input. It checks only:
 
 It deliberately ignores session IDs, working-directory values, model names, permission metadata, and `transcript_path`. It never opens the transcript or any deployment file. Valid input produces one generic repository-safety `systemMessage`.
 
-Invalid JSON, oversized input, unknown events, and unknown string-valued sources exit successfully with a generic fallback message directing Codex to `AGENTS.md`. The hook writes no file, report, log, cache, or network request.
+Invalid JSON, oversized or excessively nested input, input read errors, unknown events, and missing or malformed sources exit successfully with a generic fallback message directing Codex to `AGENTS.md`. Source type is checked before membership, so arrays and objects cannot raise an unhandled type error. The hook writes no file, report, log, cache, or network request.
 
-Graceful degradation is incomplete for malformed field types: an array or object in `source` currently raises `TypeError` during membership checking instead of emitting the fallback. This is an unresolved implementation defect, not an exception to the requirement that integration degrade safely. A hook failure never authorizes mutation, publication, or reporting; the repository guidance and CLI remain the fallback.
+The hook retains the documented advisory `continue` and `systemMessage` output fields; it does not block a session or add tool authority. See the official [hook output contract](https://learn.chatgpt.com/docs/hooks). A hook failure never authorizes mutation, publication, or reporting; the repository guidance and CLI remain the fallback.
 
 ## Testing and compatibility
 
-Tests parse project TOML, validate the configured hook path and event, run public fictional fixtures through the hook, prove the transcript path is ignored, and verify fallback for the invalid-JSON and future-event cases they cover. They do not cover every malformed field type.
+Tests parse project TOML, validate the configured hook path and event, run public fictional fixtures through the hook, prove the transcript path is ignored, and verify fallback for invalid JSON, oversized/nested input, wrong top-level and source types, future events, and input read errors. They do not prove behavior for every possible runtime or output-stream failure.
 
 These tests exercise the hook directly. They do not prove that a particular Codex app or CLI version loaded it in a live session. That integration and the guided first-user behavior still require manual evidence. The configured command locates the hook through a Git checkout; an extracted candidate alone is not a verified Codex project-hook installation.
 

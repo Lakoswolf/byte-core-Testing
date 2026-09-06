@@ -48,10 +48,11 @@ The checkout provides these experimental capabilities for disposable testing. Th
 | Environment checks | Read-only `check` through a POSIX launcher and Python standard-library implementation | [CLI](docs/cli.md); Python 3.11–3.14 and the exact host matrix |
 | Deployment initialization | Guided `init`, saved `plan init`, exact-plan `apply` and `verify`; creates a minimal TOML file and four documents | [Canonical documents](docs/canonical-documents.md); no infrastructure discovery |
 | Guided inventory | Explicit Nmap discovery/inspection plans, offline XML import, cited local model lookup, and reviewed catalog snapshots | [Inventory](docs/inventory.md); optional active probing, no automatic network selection or device configuration |
-| Configuration | Internal schema-1 layered TOML resolution with type checks and source tracking | [Configuration](docs/configuration.md); no public resolver command or schema migration |
+| Configuration | Internal schema-1 layered TOML resolution with type checks, source tracking, and contained workspace-path resolution | [Configuration](docs/configuration.md); no public resolver command or schema migration |
+| Guided helper setup | Offline prerequisite checks and exact-plan creation/verification of a new mode-`0600` helper settings file | [Setup](docs/setup.md); explicit choices and approval, no overwrites, package installation, or profile changes |
 | Core lifecycle | Exact-plan install, local update, removal, verification, replay checks, and bounded failure recovery | [Installation](docs/installation.md); explicit roots and local artifacts |
 | Guided updates | Local candidate checking and planning; exact-plan application with plan-ID confirmation | [CLI](docs/cli.md); no remote update discovery |
-| Shell integration | Reversible Bash/Zsh profile blocks, configurable navigation/assistant helpers, optional prompt/history/highlighting/aliases | [Shell integration](docs/shell-integration.md); explicit opt-in, no package installation; third-party highlighting needs a fresh shell to undo |
+| Shell integration | Reversible Bash/Zsh profile blocks with profile-mode and selected-source verification; configurable navigation/assistant helpers and optional prompt/history/highlighting/aliases | [Shell integration](docs/shell-integration.md); explicit opt-in, fixed source dependency coverage; third-party highlighting needs a fresh shell to undo |
 | Operational helpers | Exact-plan configured repository synchronization, numeric-IP reachability, direct or SSH-relayed wake requests | [Helper setup](docs/helpers.md); separate deployment-owned TOML, explicit execution approval, no automatic publication or verified power state |
 | Byte Care | Explicit `doctor` reports, local storage, and optional reviewed GitHub create/comment transport | [Byte Care](docs/byte-care.md); no automatic collection or submission |
 | Codex guidance | Repository `AGENTS.md`, configured advisory SessionStart hook, and a first-session guide | [Codex integration](docs/codex-integration.md); no Byte skill or plugin package |
@@ -79,12 +80,12 @@ Run these commands one at a time. If `check` reports `unsupported`, stop before 
 
 ## Remaining release work
 
-- Add explicit Kubuntu 26.04 x86_64 detection, coverage, and isolated lifecycle evidence under [issue #36](https://github.com/kodiakdirus/byte-core/issues/36). It is planned v0.1 work, not a currently accepted host.
+- Complete isolated native Kubuntu 26.04 x86_64 lifecycle evidence under [issue #36](https://github.com/kodiakdirus/byte-core/issues/36). Detection and fixture coverage are implemented; no native Kubuntu CI runner or passed acceptance record is claimed.
 - Record reviewed manual evidence for the supported target platforms, including preservation, backout, and offline behavior.
 - Complete an independent fresh-user review and resolve its findings under [issue #5](https://github.com/kodiakdirus/byte-core/issues/5).
 - Resolve remaining acceptance criteria and implementation gaps, review the exact candidate, and pass the final release gate before approving `v0.1.0`.
 
-Remote update discovery, automatic diagnostic collection/reporting, configuration migration, artifact signing, package-manager installation, and production support remain unavailable. The component contracts describe narrower implementation limits, including configuration path validation, shell verification, and Byte Care version reporting.
+The release ledger contains four pending platform targets—Ubuntu 24.04, Kubuntu 26.04, macOS 15, and macOS 26—and a separate pending independent review. Remote update discovery, automatic diagnostic collection/reporting, configuration migration, artifact signing, package-manager installation, and production support remain unavailable. Component contracts describe remaining limits, including concurrent filesystem changes, shell source coverage, Byte Care version reporting, and live Codex hook evidence.
 
 The first bootstrap release, [`v0.0.1`](https://github.com/kodiakdirus/byte-core/releases/tag/v0.0.1), is published as a pre-release with no release assets. It records the repository bootstrap and is not a functional Byte Core release.
 

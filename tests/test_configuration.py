@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import sys
+import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 SOURCE_ROOT = REPOSITORY_ROOT / "src"
@@ -13,6 +16,7 @@ from byte_core.configuration import (  # noqa: E402
     ConfigurationError,
     Layer,
     resolve_configuration,
+    resolve_workspace_path,
 )
 
 FIXTURES = Path(__file__).parent / "fixtures" / "configuration"
@@ -187,6 +191,64 @@ class ConfigurationTests(unittest.TestCase):
         )
 
         self.assertNotIn(str(path), str(error))
+
+    def test_workspace_paths_reject_escaping_and_expansion_in_every_layer(self) -> None:
+        invalid = ("", "/absolute", "../outside", "inside/../outside", "./inside", "inside//nested",
+                   "inside/", "~/inside", "inside/~user", "$HOME/inside", "${ROOT}/inside",
+                   "%ROOT%/inside", "`pwd`/inside", "C:/inside", "C:inside", "inside\\nested",
+                   "inside\x00nested", "inside\nnext", "inside\x7fnext")
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            bad = root / "layer.toml"
+            for value in invalid:
+                with self.subTest(value=value):
+                    bad.write_text('schema_version = 1\n[paths]\nworkspace = ' + json.dumps(value) + '\n')
+                    with self.assertRaises(ConfigurationError) as raised:
+                        resolve_configuration([Layer("core", bad), Layer("host", VALID / "host.toml")])
+                    self.assertEqual(raised.exception.code, "invalid_workspace_path")
+                    if value:
+                        self.assertNotIn(value, str(raised.exception))
+
+    def test_workspace_resolution_is_explicit_contained_and_does_not_create(self) -> None:
+        config = resolve_configuration([Layer("core", VALID / "core.toml")])
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            self.assertEqual(resolve_workspace_path(config, root), root / "workspace")
+            self.assertEqual(list(root.iterdir()), [])
+            (root / "workspace").mkdir()
+            self.assertEqual(resolve_workspace_path(config, root), root / "workspace")
+            with self.assertRaises(ConfigurationError):
+                resolve_workspace_path(config, root / "missing")
+            with self.assertRaises(ConfigurationError):
+                resolve_workspace_path(config, "relative")
+
+    def test_workspace_resolution_rejects_symlinks_and_files(self) -> None:
+        config = resolve_configuration([Layer("core", VALID / "core.toml")])
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            deployment = root / "deployment"
+            deployment.mkdir()
+            outside = root / "outside"
+            outside.mkdir()
+            (deployment / "workspace").symlink_to(outside, target_is_directory=True)
+            with self.assertRaises(ConfigurationError):
+                resolve_workspace_path(config, deployment)
+            (deployment / "workspace").unlink()
+            (deployment / "workspace").write_text("fictional sentinel")
+            with self.assertRaises(ConfigurationError):
+                resolve_workspace_path(config, deployment)
+            self.assertEqual((deployment / "workspace").read_text(), "fictional sentinel")
+            alias = root / "alias"
+            alias.symlink_to(deployment, target_is_directory=True)
+            with self.assertRaises(ConfigurationError):
+                resolve_workspace_path(config, alias)
+
+    def test_workspace_resolution_revalidates_mutated_values(self) -> None:
+        config = resolve_configuration([Layer("core", VALID / "core.toml")])
+        config.values["paths"]["workspace"] = "../changed"
+        with mock.patch("pathlib.Path.is_dir", side_effect=AssertionError("validate before filesystem inspection")):
+            with self.assertRaises(ConfigurationError):
+                resolve_workspace_path(config, "/fictional/deployment")
 
     def _valid_layers(self) -> list[Layer]:
         return [
