@@ -4,7 +4,7 @@ These are experimental bootstrap commands for disposable testing, not a supporte
 
 ## First setup
 
-Ask Byte to prepare a helper configuration with you. It should explain the available settings, keep unknown paths and device details unset, validate the file, and show any operational plan before requesting execution approval.
+Ask Byte to prepare a helper configuration with you using [Guided helper setup](setup.md). It should explain the available settings, keep unknown paths and device details unset, check configured prerequisites, and review the exact setup plan before creating the new settings file. Operational and profile changes have their own later plans and approvals.
 
 For an offline terminal trial, run each block separately from the checkout in Bash or Zsh. Stop if a command fails. Create a new disposable configuration outside Core:
 
@@ -18,10 +18,29 @@ Resolve the new directory to its physical absolute path (temporary directories c
 BYTE_HELPERS_TRIAL=$(cd "$BYTE_HELPERS_TRIAL" && pwd -P)
 ```
 
-Copy the generic starter into that newly created directory:
+Prepare the generic starter in that newly created directory, then check and plan a separate new helper file:
 
 ```sh
-./bin/byte helpers config example > "$BYTE_HELPERS_TRIAL/helpers.toml"
+./bin/byte helpers config example > "$BYTE_HELPERS_TRIAL/prepared.toml"
+./bin/byte setup check --settings "$BYTE_HELPERS_TRIAL/prepared.toml"
+./bin/byte setup plan \
+  --settings "$BYTE_HELPERS_TRIAL/prepared.toml" \
+  --output "$BYTE_HELPERS_TRIAL/helpers.toml" \
+  > "$BYTE_HELPERS_TRIAL/setup-plan.json"
+```
+
+Review the saved JSON plan: source digest, new destination, mode `0600`, prerequisite report, backout, and full `id`. Generic defaults leave optional choices unconfigured. Replace `REVIEWED_PLAN_ID` below with that full ID only after approving the plan:
+
+```sh
+./bin/byte setup apply \
+  --plan "$BYTE_HELPERS_TRIAL/setup-plan.json" \
+  --approve REVIEWED_PLAN_ID
+./bin/byte setup verify --plan "$BYTE_HELPERS_TRIAL/setup-plan.json"
+```
+
+Setup preserves the prepared bytes, creates the destination with mode `0600`, and refuses an existing destination. It runs no applications or network operations and makes no profile changes. After successful verification, select the created file:
+
+```sh
 export BYTE_CORE_HELPERS_CONFIG="$BYTE_HELPERS_TRIAL/helpers.toml"
 ./bin/byte helpers config validate
 ```
@@ -50,7 +69,7 @@ For persistent integration, separately review and apply a [shell profile plan](s
 
 This is a standalone schema-1 TOML document, separate from the layered deployment resolver. Do not put helper keys into `deployment.toml`. Unknown keys, duplicate TOML keys, incorrect types, unsupported schema versions, and malformed settings are refused. Input files and saved plans must be absolute regular files without symlinks or parent traversal; input size is capped at 2 MiB. Configured operational paths are also explicit absolute paths, without parent traversal. Their existence and target state are checked when the relevant helper runs or plans.
 
-The [starter template](../templates/helpers.toml) contains generic defaults and commented fictional examples. The current CLI prints, validates, and reads settings; it does not provide a configuration editor, migrate old files, or automatically save plans/results. Keep operational configuration and output outside the public Core checkout.
+The [starter template](../templates/helpers.toml) contains generic defaults and commented fictional examples. The helper CLI prints, validates, and reads settings; optional `byte setup` creates one new reviewed settings file. Neither provides a configuration editor, migrates old files, or automatically saves plans/results. Keep operational configuration and output outside the public Core checkout. Later settings edits remain deployment-owned; use `setup check` to validate them because the original setup plan intentionally binds the original bytes.
 
 ## Settings reference
 

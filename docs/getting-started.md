@@ -18,7 +18,7 @@ The executable entry point is `./bin/byte` inside the checkout. There is no sepa
 
 ## 1. Get the checkout and open Codex
 
-You need Git and Python 3.11 through 3.14 for the exercise. The current target hosts are Ubuntu 24.04 on x86_64 and macOS 15 or 26 on Apple silicon. The [support matrix](support-matrix.md) defines the full boundary; other hosts can read the guide, but must stop if Byte's check reports them as unsupported.
+You need Git and Python 3.11 through 3.14 for the exercise. The current target hosts are Ubuntu 24.04 or Kubuntu 26.04 on x86_64 and macOS 15 or 26 on Apple silicon. The [support matrix](support-matrix.md) defines detection and pending native evidence; other hosts can read the guide, but must stop if Byte's check reports them as unsupported.
 
 For an isolated Linux trial with prerequisites included, the [Ubuntu dev container](dev-container.md) provides a terminal test environment. It does not install Codex inside the container or validate the conversational workflow; use its terminal instructions for that trial.
 
@@ -95,7 +95,19 @@ Live discovery is a separate choice. It requires a reviewed explicit network ran
 
 ## Optional: configure your shell helpers
 
-After the introductory exercise, ask Byte to prepare a deployment-owned helper configuration using the [helper setup guide](helpers.md). It should explain your choices for development directory, assistant application, optional shell presentation, and any explicitly selected devices or repositories. The supplied template starts with interactive features disabled and no operational targets.
+After the introductory exercise, ask Byte to prepare a deployment-owned helper configuration using the [guided setup workflow](setup.md). It should explain your choices for development directory, assistant application, optional shell presentation, and any explicitly selected devices or repositories. The supplied template starts with interactive features disabled and no operational targets.
+
+```text
+Byte, continue with docs/setup.md using fictional settings for this trial.
+Explain the optional helpers and leave unknown choices unset. Prepare a
+new private settings file outside Core, run setup check, and save a plan
+for a separate new destination. Explain the checks, exact target, and
+backout, then wait for my approval of that plan. After approval, apply
+and verify it. Explain the next shell steps and stop before editing a
+profile, launching an application, or contacting any device or repository.
+```
+
+Expect a readiness report first, followed by a saved plan with an `id`. After exact approval, successful application reports `settings_saved`, and verification reports `verified`. The destination preserves the prepared TOML and uses private mode `0600`. Missing configured prerequisites stop planning; unset optional features remain available for later configuration. The [settings reference](helpers.md#settings-reference) explains each choice.
 
 You can validate that configuration and source the shell asset in a disposable Bash or Zsh session before deciding whether to install a profile block. Loading settings does not contact devices or synchronize repositories. Reachability, wake, and synchronization each have an offline plan followed by a separate approved execution step. These operations are outside the initialization rehearsal.
 

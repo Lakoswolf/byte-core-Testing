@@ -2,7 +2,7 @@
 
 Byte Core uses one `byte` command for lifecycle operations. The command separates checking, planning, applying, verifying, and backing out changes so that read-only discovery cannot silently become mutation.
 
-The current bootstrap implements `check`, guided initialization, exact-plan installation, update and removal, reversible shell integration, configurable shell and operational helpers, optional guided inventory, and local diagnostics with optional reviewed GitHub reporting. These remain experimental proofs, not a supported installed CLI. For a guided introduction, start with [Your first session with Byte](getting-started.md).
+The current bootstrap implements `check`, guided initialization and helper setup, exact-plan installation, update and removal, reversible shell integration, configurable shell and operational helpers, optional guided inventory, and local diagnostics with optional reviewed GitHub reporting. These remain experimental proofs, not a supported installed CLI. For a guided introduction, start with [Your first session with Byte](getting-started.md).
 
 ## Grammar
 
@@ -19,6 +19,10 @@ byte verify --plan PLAN.json [--format text|json]
 byte update --check --manifest ABSOLUTE_PATH --artifact-root ABSOLUTE_PATH [--format text|json]
 byte update --plan --manifest ABSOLUTE_PATH --artifact-root ABSOLUTE_PATH
 byte update --apply PLAN.json
+byte setup check --settings ABSOLUTE_PREPARED_TOML
+byte setup plan --settings ABSOLUTE_PREPARED_TOML --output ABSOLUTE_NEW_HELPERS_TOML [--home-root ABSOLUTE_PATH --shell bash|zsh --shell-script ABSOLUTE_PATH]
+byte setup apply --plan ABSOLUTE_PLAN_PATH --approve PLAN_ID
+byte setup verify --plan ABSOLUTE_PLAN_PATH
 byte shell plan --home-root ABSOLUTE_PATH --shell bash|zsh --shell-script ABSOLUTE_PATH [--syntax-highlighting ABSOLUTE_PATH]
 byte shell apply --plan PLAN.json [--format text|json]
 byte shell verify --plan PLAN.json [--format text|json]
@@ -66,7 +70,7 @@ Environment-check summaries and diagnostic payloads exclude credentials, environ
 - the operating system is macOS or Linux;
 - the process environment is POSIX-compatible;
 - the machine architecture can be normalized;
-- the complete host is an approved v0.1 target (macOS 15 or 26 on `arm64`, or Ubuntu 24.04 on `linux/x86_64`); and
+- the complete host is an approved v0.1 target (macOS 15 or 26 on `arm64`, or Ubuntu 24.04 or explicitly identified Kubuntu 26.04 on `linux/x86_64`); and
 - Git is available and reports a parseable version.
 
 The command does not:
@@ -83,6 +87,8 @@ The command does not:
 A supported check returns status 0. A recognized but currently unsupported environment returns status 3 with every check result still shown. An unexpected internal failure returns status 70 with a sanitized error.
 
 The [v0.1 support matrix](support-matrix.md) records the exact operating-system, architecture, runtime, shell, automated-evidence, and manual-evidence boundary. A recognized operating system is not sufficient by itself to claim host support.
+
+Kubuntu recognition requires explicit operating-system/variant identification or a bounded local query proving the Kubuntu desktop metapackage is installed. Display names, KDE session variables, and Ubuntu ancestry alone do not qualify. Plain Ubuntu 26.04 remains unsupported. The package query is read-only and sends no traffic; raw package records are not reported. Kubuntu automated coverage uses fixtures on existing runners, while native acceptance evidence remains pending.
 
 Zsh and shell enhancements are optional on Linux and are not environment-check prerequisites. Byte does not install a shell or modify shell profiles as part of `check`, installation, or initialization.
 
@@ -144,6 +150,16 @@ Interactive apply uses text output so its preview and confirmation prompt cannot
 
 The descriptor and artifact checksums detect mismatch and accidental modification; they do not authenticate publisher identity. This proof does not migrate configuration, fetch releases, verify signatures or tag provenance, garbage-collect releases, or provide automatic update selection. It is not a supported installed command-line interface.
 
+## Optional guided helper setup
+
+`byte setup check` validates an explicitly prepared standalone helpers TOML and checks configured local prerequisites without launching applications, sourcing shell code, inspecting repository contents, or contacting devices. Missing optional choices stay unconfigured; configured unavailable paths or executables prevent planning.
+
+`byte setup plan` binds the prepared file's path and exact digest, a new destination outside Core and Git metadata paths, its existing directory identity, mode `0600`, prerequisite results, backout, and next steps. Keep deployment-owned settings outside version control. It prints private-local JSON and creates nothing. The optional home/shell/asset selections must be supplied together and produce a later shell-planning command; they do not create a shell plan or bind its profile/source state.
+
+`byte setup apply` requires the full reviewed `--approve` ID, rechecks those facts, and exclusively publishes the original TOML bytes as a new mode-`0600` file. Existing files, including a previous apply's output, are never overwritten. `byte setup verify` checks directory identity, regular-file type, exact digest, and mode; it can run after the prepared source is removed. Later customization intentionally makes the original byte verification fail; use `setup check` to inspect current choices.
+
+All setup results are JSON. The workflow creates no directories, profiles, applications, or operational plans and does not persist the environment selector. Settings validation remains separate from authorization to use those settings. Recovery and the separately reviewed loading/profile steps are documented in [Guided helper setup](setup.md).
+
 ## Optional helper commands
 
 The `helpers` namespace supplies the configurable runtime behind the sourced Bash/Zsh shortcuts. Its standalone configuration is selected by `--config ABSOLUTE_PATH`, then `BYTE_CORE_HELPERS_CONFIG`, then generic defaults. It does not extend the layered deployment resolver. The complete settings and workflow are in [Helper setup](helpers.md).
@@ -168,7 +184,9 @@ Plans and operational results are JSON and may contain private local paths, refs
 
 The `byte shell` namespace applies the same separation to Bash and Zsh profile integration. `plan` and `plan-remove` are read-only and emit exact private-local JSON plans. `apply`, `verify`, and `remove` load those plans without guessing a home directory or profile.
 
-Apply and remove preserve unrelated profile content, use distinct recoverable backups, write the profile mode recorded during planning, and refuse changes to profile existence or bytes made after planning. Exact replay is idempotent. A malformed, duplicate, stale, missing, or linked managed block is refused. Permission-only drift and changes to sourced script bytes are not covered by current shell verification; see the shell contract.
+Version-2 shell plans bind profile existence, bytes, and mode. Installation also binds checksums and modes for the explicit entrypoint, optional `--syntax-highlighting` file, and the selected adjacent native asset when using the packaged `byte-shell.sh` name. Apply, replay, and verification refuse drift in those facts. Version-1 plans must be regenerated. Apply and remove preserve unrelated profile content and use distinct recoverable backups; exact replay is idempotent. A malformed, duplicate, stale, missing, or linked managed block is refused.
+
+The source snapshot follows a fixed dependency contract, with a 4 MiB limit per selected source. It does not recursively bind arbitrary imports, the helper launcher/Python backend, or highlighting later selected through helper configuration. Checks occur during apply, replay, and verification; they do not intercept future shell sourcing. Removal remains possible without unchanged installed source files. See the [shell contract](shell-integration.md#current-boundary) for source coverage and recovery limits.
 
 Zsh syntax highlighting is included only when the operator supplies `--syntax-highlighting` during planning. Byte does not require Zsh on Linux, install packages, modify the login shell, or add syntax highlighting implicitly. The full boundary is documented in the [shell-integration contract](shell-integration.md).
 

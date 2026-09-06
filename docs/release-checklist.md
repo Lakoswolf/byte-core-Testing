@@ -2,7 +2,7 @@
 
 Byte Core 0.1.0 remains blocked until every automated check and every supported-platform manual record passes. This checklist is repeatable; it does not authorize a tag by itself.
 
-The current checker and ledger cover Ubuntu 24.04, macOS 15, and macOS 26 plus the independent review. [Issue #36](https://github.com/kodiakdirus/byte-core/issues/36) also requires Kubuntu 26.04 support and evidence before release; implementation must extend the matrix, checker, and ledger. A pass against the existing three-target schema would not close that issue or authorize release.
+The checker and ledger cover Ubuntu 24.04 x86_64, Kubuntu 26.04 x86_64, macOS 15 arm64, and macOS 26 arm64 plus the independent review. All five entries remain pending. [Issue #36](https://github.com/kodiakdirus/byte-core/issues/36) requires native Kubuntu lifecycle evidence; implemented detection and fixture coverage do not complete that record. Runtime and release checks share one exact platform-target set, and a plain Ubuntu 26.04 record cannot substitute for Kubuntu.
 
 ## Candidate construction
 
@@ -25,9 +25,9 @@ The checker validates ledger structure, required record headings, descriptor int
 ## Automated gate
 
 - Full unit suite passes on every configured operating-system/Python combination.
-- Bash launcher smoke tests pass on all targets; native Zsh smoke tests pass on macOS.
+- Bash launcher smoke tests pass on the configured Ubuntu/macOS runners; native Zsh smoke tests pass on macOS. Kubuntu detection and refusal fixtures pass on existing runners; no native Kubuntu hosted runner is configured.
 - Canonical document validation and invalid/future schema refusal tests pass.
-- Install, update, removal, shell, diagnostics, reviewed-report, offline, privacy, and interruption tests pass.
+- Install, update, removal, guided setup, shell mode/source verification, workspace-path validation, malformed hook input, diagnostics, reviewed-report, offline, privacy, and interruption tests pass.
 - Candidate descriptor and every managed file digest verify.
 - Complete candidate privacy scan passes with no adapter error or active finding.
 - `git diff --check` passes and the candidate is built from a clean reviewed commit.
@@ -36,7 +36,7 @@ CI configuration is not evidence by itself. Record the URLs and conclusions of p
 
 ## Manual platform record
 
-Follow the exact [deployment-candidate testing guide](deployment-testing.md). In the source checkout, copy the matching template from `release/v0.1/evidence/` for each supported target. Use only fresh fictional deployment data. Include the tested commit and candidate archive SHA-256, then record:
+Follow the exact [deployment-candidate testing guide](deployment-testing.md). In the source checkout, copy the matching template from `release/v0.1/evidence/` for each of the four supported targets. Use only fresh fictional deployment data. Native Kubuntu observations must establish the documented flavor identity and remain distinct from fixture, container, virtual-machine, or emulated rehearsals. Include the tested commit and candidate archive SHA-256, then record:
 
 ```text
 # TARGET manual evidence

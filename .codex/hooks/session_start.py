@@ -27,11 +27,12 @@ def run(input_stream: TextIO, output_stream: TextIO) -> int:
         if (
             type(raw) is not dict
             or raw.get("hook_event_name") != "SessionStart"
+            or type(raw.get("source")) is not str
             or raw.get("source") not in SUPPORTED_START_SOURCES
         ):
             raise ValueError
         message = GUIDANCE
-    except (OSError, UnicodeError, ValueError, json.JSONDecodeError):
+    except (OSError, UnicodeError, ValueError, RecursionError):
         message = FALLBACK
     output_stream.write(
         json.dumps(
