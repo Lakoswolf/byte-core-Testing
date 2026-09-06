@@ -14,6 +14,7 @@ from dataclasses import asdict, dataclass
 from enum import IntEnum
 from typing import Sequence, TextIO
 
+from . import helpers_cli, inventory_cli
 from .care import (
     CareError,
     build_diagnostic_report,
@@ -122,6 +123,8 @@ def build_parser() -> argparse.ArgumentParser:
         description="Safely inspect and manage a self-managed Byte deployment.",
     )
     commands = parser.add_subparsers(dest="command", required=True)
+    inventory_cli.add_parser(commands)
+    helpers_cli.add_parser(commands)
 
     check = commands.add_parser(
         "check",
@@ -332,6 +335,10 @@ def main(
 
     try:
         arguments = parser.parse_args(argv)
+        if arguments.command == "inventory":
+            return inventory_cli.run(arguments, output, errors, collect_check_report)
+        if arguments.command == "helpers":
+            return helpers_cli.run(arguments, output, errors, collect_check_report)
         if arguments.command == "plan":
             if arguments.operation == "init":
                 active_plan = build_initialization_plan(arguments.deployment_root)

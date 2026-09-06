@@ -85,6 +85,8 @@ Unknown deployment facts remain unknown. Examples must not invent facts about a 
 
 The local scanner inspects only explicitly selected inputs. Current internal adapters cover Core-public files, staged Git content, release artifact directories, and already-constructed diagnostic payloads. Repository CI runs the unit suite, scans public documentation and templates, proves rejection of a runtime-generated synthetic leakage artifact, builds the deterministic v0.1 candidate directory, and scans that complete candidate before it can become release evidence.
 
+The file adapter also recognizes the exact text filenames `Dockerfile` and `.dockerignore`. Their contents receive the same bounded reads, binary/UTF-8 checks, and privacy rules as other supported public text files. CI explicitly scans `.devcontainer/`, even though that development tooling is excluded from the candidate artifact.
+
 Scanner output must identify the rule, classification, and safe location needed for review without printing the discovered value. Context must be omitted or reduced to a non-sensitive structural description.
 
 A finding fails closed until it is removed, replaced with a safe fictional value, or covered by an approved false-positive allowlist entry. A clean scan reduces risk but does not prove that content is safe or authorize publication.

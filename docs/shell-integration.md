@@ -4,12 +4,38 @@ Byte Core's experimental shell integration is an explicit, reversible layer for 
 
 ## Generic shell asset
 
-[`shell/byte-shell.sh`](../shell/byte-shell.sh) is POSIX-compatible and safe to source repeatedly. It provides:
+[`shell/byte-shell.sh`](../shell/byte-shell.sh) provides a POSIX-compatible basic layer and loads adjacent native assets for Bash or Zsh. Repeated sourcing preserves per-shell feature preferences. Its original basic helpers remain available:
 
 - `byte_status`, which reports only that the generic integration is active; and
-- `byte_repo PATH`, which changes to an explicit directory and verifies that it is a Git worktree.
+- `byte_repo PATH`, which validates an explicit directory as a Git worktree before changing the caller's directory.
 
 The asset contains no hostnames, usernames, addresses, inventory, credentials, or deployment paths. Unknown hosts receive the same generic behavior.
+
+## Configurable shell helpers
+
+The following helpers are implemented for experimental Bash/Zsh use. They do not establish a supported shell API. The [helper setup guide](helpers.md) documents configuration, command syntax, approval boundaries, and limitations. Runtime helpers need the asset's adjacent native files and `../bin/byte` launcher, Python, and any explicitly invoked prerequisites.
+
+| Helper | Behavior and configuration |
+| --- | --- |
+| `bytehelp`, `bytewhere` | Explain available helpers and show relevant local integration context. Keep local context out of public reports. |
+| `bytesafety` | Explain Core's generic operational rules; deployment-specific guidance remains deployment-owned. |
+| `rebyte` | Reload the explicitly selected shell asset while preserving feature preferences. |
+| `dev` | Navigate to an explicitly configured development directory. |
+| `byten`, `byter` | Invoke the configured application once at the current Git root using separate new/resume argument arrays. Session semantics belong to the selected application; Core does not inspect session data. |
+| `bytegit` | Show Git status with optional arguments. This name does not imply automatic synchronization, publication, or branch cleanup. |
+| `byteprompt` | Optional prompt with configurable label, colors, and directory/Git components; preserve and restore the user's prompt and relevant shell option. |
+| `bytehistory` | Optional prefix history search with enable, disable, status, and restoration behavior. |
+| `bytehighlight` | Source an explicit optional Zsh highlighter; optional styles for zsh-syntax-highlighting. Third-party changes require a fresh shell to undo. |
+| `bytealiases`; `ll`, `la`, `..` | Toggle optional convenience aliases while preserving existing user definitions. |
+| `labstatus` | Check explicitly configured inventory targets through a reachability backend. |
+| `canisync` | Synchronize explicitly configured repositories, remotes, and branches through a separately validated backend. |
+| `wakelan` | Request wake-on-LAN for an explicitly selected configured device, with configurable delivery and relay settings where applicable. |
+
+Deployment-specific project-root shortcuts and an editor shortcut are excluded. `bytegit` is the Git-status helper; `wakelan` is the generic wake helper. No deployment-specific compatibility aliases are provided.
+
+All helpers follow the [configuration design requirements](configuration.md#designing-configurable-tools). Ordinary setup edits deployment-owned settings rather than scripts. No helper invents a repository layout, device identity, address, relay, or application location.
+
+Interactive features are opt-in; prompt, history bindings, and Byte-created aliases have disable behavior. Arbitrary third-party highlighting code cannot be reversed safely in place. Operational helpers delegate to backends with explicit scope, validation, and failure reporting. Offline plans do not contact devices or remotes. Execution requires a saved plan and its reviewed ID. Configuration does not authorize network traffic or mutation.
 
 ## Managed profile block
 
@@ -29,6 +55,6 @@ Bash plans reject this option. Byte does not locate, download, install, upgrade,
 
 ## Current boundary
 
-This is an internal bootstrap proof, not a supported installed shell product. It does not customize prompts, discover repositories, execute inventory commands, install completions, alter shell history, or modify appliance hosts.
+This is an internal bootstrap proof, not a supported installed shell product. Optional prompt and history-keybinding customization is implemented; history files are not inspected or rewritten. Helpers do not discover repositories, install completions or dependencies, infer device configuration, automatically publish changes, or install remote wake senders. Reachability and wake requests do not prove device identity, capabilities, or power state. Manual native-platform and real application/network evidence remains pending.
 
 Current shell verification checks profile bytes and managed-block presence, not permission-only drift or the contents of the sourced shell and syntax-highlighting files. Plans bind those source paths but do not checksum their contents. Review those explicit files before sourcing them. Removal restores profile absence or unrelated content, but keeps its private backup files for recovery.

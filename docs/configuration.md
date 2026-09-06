@@ -14,6 +14,19 @@ Byte Core parses TOML with Python's standard-library `tomllib` module. It does n
 
 `tomllib` is a parser, not a general TOML writer. Experimental initialization creates a new `deployment.toml` containing only `schema_version = 1` from a deterministic template. This does not authorize general rewriting of TOML. Byte Core must not silently rewrite deployment-owned configuration.
 
+## Designing configurable tools
+
+New and rewritten scripts, shell helpers, and apps must expose ordinary deployment choices through documented settings instead of requiring source edits. This general design requirement does not itself add keys to the layered resolver.
+
+- Make relevant paths, device selections, network relays, repository selections, application executables, and presentation preferences configurable. Use generic defaults only when they do not invent deployment facts. Missing required settings must explain what the user needs to configure.
+- Keep settings deployment-owned and separate from Core program files. Routine updates preserve them. Provide concise setup instructions and fresh fictional examples with the implementation.
+- Define each setting's type, default or required status, validation, and path base. Follow the existing layer precedence. Any command-line override must have documented precedence; do not introduce implicit environment or home expansion.
+- Treat configuration as data. Do not source or evaluate configuration as shell code. Where a tool launches a configured application, represent its executable and arguments separately and validate them before invocation. Merely loading settings must not execute an application or contact a network.
+- Make optional shell features independently selectable. Preserve existing user preferences and define how disabling or reloading a feature restores or retains its state.
+- Validate the resolved settings before an operation and show the relevant targets during planning. Configuring a device, relay, repository, or executable does not authorize its use. Safety invariants remain enforced in code.
+
+The experimental [shell helpers](helpers.md) implement a separate, explicitly selected `helpers.toml` interface with a starter template and read-only validation. It is not a layer of `deployment.toml`: do not add helper keys to the existing layered resolver's files. Helper paths explicitly allow absolute paths and reject parent traversal; they do not expand variables or home-directory shorthand. The helper file's selection uses `--config` before `BYTE_CORE_HELPERS_CONFIG`, then generic defaults if neither is supplied. No automatic file discovery or configuration writing occurs.
+
 ## Logical roots
 
 Byte Core uses logical roots so that ownership does not depend on a particular operating-system layout:
@@ -39,7 +52,7 @@ Byte Core updates may replace a Core-managed file only when the file is listed i
 
 ### Deployment-owned
 
-Deployment-owned content includes configuration, identity, inventory, canonical documentation, credential references, and operator-authored extensions.
+Deployment-owned content includes configuration, identity, inventory, canonical documentation, credential references, and operator-authored extensions. The optional [inventory backend](inventory.md) stores explicit JSON observations and reviewed catalog snapshots outside Core; it does not add configuration keys, discover configuration layers, or change this resolver's schema.
 
 Byte Core may create a deployment-owned file only through an explicit initialization or migration plan. Once created, the file remains deployment-owned. Routine installation and update operations must not overwrite it.
 

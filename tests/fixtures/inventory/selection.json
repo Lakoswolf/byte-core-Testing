@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "devices": [
+    {
+      "device_id": "example-printer",
+      "address": "192.0.2.10",
+      "label": "Example printer",
+      "manufacturer": "Example Devices",
+      "model": "Sample Printer 1",
+      "device_type": "printer",
+      "notes": "Fictional rehearsal device."
+    }
+  ]
+}

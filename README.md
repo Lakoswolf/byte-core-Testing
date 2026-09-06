@@ -14,6 +14,10 @@ Byte Core supplies the commands, templates, and working rules; Codex provides th
 
 If you are reviewing a release candidate, continue with [deployment acceptance testing](docs/deployment-testing.md) after the introduction.
 
+After the document skeleton, explore [guided device inventory](docs/inventory.md). Its offline walkthrough uses fictional devices; live discovery is a separate, explicitly approved step with optional Nmap.
+
+For a disposable Linux environment with prerequisites included, use the [Ubuntu dev container](docs/dev-container.md). It provides a read-only source mount, a terminal test workflow, and optional Dev Containers editor configuration.
+
 ## Architectural rule
 
 > Byte Core owns behavior and structure; each deployment owns identity and truth.
@@ -43,13 +47,17 @@ The checkout provides these experimental capabilities for disposable testing. Th
 | --- | --- | --- |
 | Environment checks | Read-only `check` through a POSIX launcher and Python standard-library implementation | [CLI](docs/cli.md); Python 3.11–3.14 and the exact host matrix |
 | Deployment initialization | Guided `init`, saved `plan init`, exact-plan `apply` and `verify`; creates a minimal TOML file and four documents | [Canonical documents](docs/canonical-documents.md); no infrastructure discovery |
+| Guided inventory | Explicit Nmap discovery/inspection plans, offline XML import, cited local model lookup, and reviewed catalog snapshots | [Inventory](docs/inventory.md); optional active probing, no automatic network selection or device configuration |
 | Configuration | Internal schema-1 layered TOML resolution with type checks and source tracking | [Configuration](docs/configuration.md); no public resolver command or schema migration |
 | Core lifecycle | Exact-plan install, local update, removal, verification, replay checks, and bounded failure recovery | [Installation](docs/installation.md); explicit roots and local artifacts |
 | Guided updates | Local candidate checking and planning; exact-plan application with plan-ID confirmation | [CLI](docs/cli.md); no remote update discovery |
-| Shell integration | Reversible Bash/Zsh profile blocks and generic shell helpers | [Shell integration](docs/shell-integration.md); explicit opt-in, no package installation |
+| Shell integration | Reversible Bash/Zsh profile blocks, configurable navigation/assistant helpers, optional prompt/history/highlighting/aliases | [Shell integration](docs/shell-integration.md); explicit opt-in, no package installation; third-party highlighting needs a fresh shell to undo |
+| Operational helpers | Exact-plan configured repository synchronization, numeric-IP reachability, direct or SSH-relayed wake requests | [Helper setup](docs/helpers.md); separate deployment-owned TOML, explicit execution approval, no automatic publication or verified power state |
 | Byte Care | Explicit `doctor` reports, local storage, and optional reviewed GitHub create/comment transport | [Byte Care](docs/byte-care.md); no automatic collection or submission |
 | Codex guidance | Repository `AGENTS.md`, configured advisory SessionStart hook, and a first-session guide | [Codex integration](docs/codex-integration.md); no Byte skill or plugin package |
+| GitHub workflow guidance | Reusable instructions for scoped changes, truthful PRs, checks on the reviewed commit, and verified branch cleanup | [GitHub workflow](docs/github-workflow.md); advisory, with no automatic publication or granted access |
 | Candidate validation | Deterministic artifact and archive builders, integrity/privacy gates, and unit tests | [Release checklist](docs/release-checklist.md); manual evidence is still required |
+| Container testing | Ubuntu 24.04 x86_64 recipe with Python, Git, Bash/Zsh, and a disposable candidate smoke test | [Dev container](docs/dev-container.md); container evidence does not replace native platform or fresh-user review |
 
 `byte remove --deployment-root` is a read-only preservation check. Installed Core removal uses `plan remove` and `apply`; deployment-owned documents are preserved.
 
@@ -85,7 +93,7 @@ The first bootstrap release, [`v0.0.1`](https://github.com/kodiakdirus/byte-core
 Byte Core v0.1 is not intended to provide:
 
 - full configuration management;
-- automatic network discovery;
+- unattended network discovery or automatic device configuration;
 - credential storage;
 - automatic remote infrastructure mutation;
 - multi-administrator or centrally managed enterprise operation;

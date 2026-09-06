@@ -31,6 +31,9 @@ jobs:
       - name: Scan canonical starter templates
         run: python scripts/check_release_privacy.py templates/canonical
 
+      - name: Scan dev-container tooling
+        run: python scripts/check_release_privacy.py .devcontainer
+
       - name: Build and validate deterministic v0.1 candidate
         run: |
           python scripts/build_release_artifact.py \

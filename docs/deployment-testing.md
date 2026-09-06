@@ -150,7 +150,7 @@ The first removal must report `removed`, verification must report `verified`, an
 
 Repeat the candidate check, initialization plan/verify, install plan/verify, shell plan/verify, and removal plan/verify while network access is disabled by a method appropriate to the disposable test environment. Record the method and result. Do not change firewall or network policy on an operational host merely to perform this test.
 
-The GitHub Byte Care transport is the only intentionally network-using path and is excluded from offline success. Do not use `--github-submit`; its behavior is covered by mock-only automated tests.
+The GitHub Byte Care transport and explicit `inventory scan` path intentionally use the network and are excluded from this offline test. Do not use `--github-submit` or live scans here; scanner execution is covered with mocked results and bounded non-network child processes, and reporting uses mock-only tests. The optional [inventory walkthrough](inventory.md#offline-first-a-fictional-walkthrough) can exercise XML import, capability lookup, catalog publication, and verification offline using the source checkout's fictional fixtures.
 
 ## 8. Record evidence
 

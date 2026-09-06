@@ -38,3 +38,5 @@ Validation does not execute commands, access the network, expand environment var
 Starter templates under `templates/canonical/` are Core-managed examples. The experimental initialization flow copies them into a new deployment. The copied files immediately become deployment-owned and routine Core installation or update must never overwrite them.
 
 Operators update the manifest when declared current state changes, the runbook when an approved procedure changes, the audit log after a reviewed action and its validation, and the notebook when durable context does not yet change an authoritative source.
+
+Optional [guided inventory](inventory.md) produces separate deployment-owned JSON observations and reviewed device snapshots. These supplement the manifest; the backend never rewrites the four documents. The assistant may propose a reviewed manifest summary based on confirmed catalog entries. Schema-1 link rules remain unchanged, so reference a JSON filename as plain text rather than a Markdown link. New files or edited starter bytes intentionally invalidate the original initialization plan's exact verification; inventory has its own plan verification.

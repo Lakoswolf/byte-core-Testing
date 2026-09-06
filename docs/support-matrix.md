@@ -2,6 +2,8 @@
 
 Byte Core is pre-alpha software without a supported functional release. This matrix defines the host combinations the v0.1 implementation and release gate are intended to validate; it is not a production-support promise.
 
+Optional [guided inventory](inventory.md) uses this host check for live Nmap execution. The core prerequisite check does not require Nmap; missing Nmap refuses only live inventory scanning. Offline import and catalog tests do not establish live discovery, manufacturer capability, or native platform acceptance evidence.
+
 ## Initial host boundary
 
 | Operating system | Architecture | Shell coverage | Automated gate | v0.1 target |
@@ -34,6 +36,8 @@ The pinned operating-system labels follow GitHub's [published hosted-runner imag
 Before a functional v0.1 release, the release gate still requires recorded manual installation, verification, backout, preservation, and offline smoke-test evidence on the supported target platforms. Until that evidence and every other release criterion are complete, README language must continue to describe Byte Core as pre-alpha and unsupported for operational use.
 
 The current ledger intentionally records all three targets as pending in `release/v0.1/manual-evidence.json`. The final gate and record format are defined in the [release checklist](release-checklist.md); no pending entry is support evidence.
+
+The optional [Ubuntu dev container](dev-container.md) exercises Ubuntu 24.04 x86_64 user-space behavior and disposable lifecycle tests. Container or emulated results must be labeled as such; they do not replace native platform observations, live Codex integration, or an independent fresh-user review. The dev-container recipe does not extend the CI matrix or complete any evidence-ledger entry.
 
 ## Planned v0.1 target addition
 
