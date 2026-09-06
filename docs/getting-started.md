@@ -20,6 +20,8 @@ The executable entry point is `./bin/byte` inside the checkout. There is no sepa
 
 You need Git and Python 3.11 through 3.14 for the exercise. The current target hosts are Ubuntu 24.04 on x86_64 and macOS 15 or 26 on Apple silicon. The [support matrix](support-matrix.md) defines the full boundary; other hosts can read the guide, but must stop if Byte's check reports them as unsupported.
 
+For an isolated Linux trial with prerequisites included, the [Ubuntu dev container](dev-container.md) provides a terminal test environment. It does not install Codex inside the container or validate the conversational workflow; use its terminal instructions for that trial.
+
 In a terminal, choose a folder for public source projects and run these commands one at a time:
 
 ```sh
@@ -85,6 +87,18 @@ For this introduction, read the files before editing them. Initialization verifi
 
 You have finished the first session when verification passes and you can locate and explain the five files. You have created a document skeleton, not installed Core or connected a live environment.
 
+## Next: build a useful inventory
+
+After the first-session exercise, the optional [guided inventory walkthrough](inventory.md) continues from the skeleton. Start with its fictional offline import to discover example devices, review a service hint, confirm a model, look up a cited example capability, and save a verified catalog. Ask Byte to explain and prepare each plan; it should help write the selection and capability inputs, then show you the proposed catalog for review.
+
+Live discovery is a separate choice. It requires a reviewed explicit network range and optional Nmap; initialization never starts a scan. The backend preserves declared names and notes when later observations are reviewed using stable device IDs. It does not automatically research models on the web or configure hardware. This optional step is outside the first-message exercise's instruction to stop after initialization.
+
+## Optional: configure your shell helpers
+
+After the introductory exercise, ask Byte to prepare a deployment-owned helper configuration using the [helper setup guide](helpers.md). It should explain your choices for development directory, assistant application, optional shell presentation, and any explicitly selected devices or repositories. The supplied template starts with interactive features disabled and no operational targets.
+
+You can validate that configuration and source the shell asset in a disposable Bash or Zsh session before deciding whether to install a profile block. Loading settings does not contact devices or synchronize repositories. Reachability, wake, and synchronization each have an offline plan followed by a separate approved execution step. These operations are outside the initialization rehearsal.
+
 ## Terminal alternative
 
 Use this route if you prefer to run the commands yourself or Codex cannot run local tools. From the checkout, run each block separately in the same Bash or Zsh terminal. Stop on any unexpected result.
@@ -138,5 +152,7 @@ Expect `Result: verified`. Read the files described above in your text editor. T
 You can leave the disposable example in place for review. To discard it, first resolve and inspect the exact temporary parent created for this exercise, confirm it contains only the example and its plan, then remove that specific folder with your file manager. Stop if its identity or contents are uncertain. There is no system installation to undo. `byte remove --deployment-root` deliberately preserves deployment documents and will not delete this example for you.
 
 Tell the maintainer which guide section was confusing, what you expected, and the relevant stable error code, if any. Use a fresh fictional description; do not send plans, absolute paths, screenshots of private context, transcripts, or broad logs.
+
+For later source-repository work, Byte's [GitHub workflow](github-workflow.md) explains how to ask for a reviewable change, publication, merging, or branch cleanup. Byte should carry out the authorized work and leave a clear handoff. This guidance is included in Core; the first-session exercise does not publish anything or grant GitHub access.
 
 When you are ready for a complete candidate review, follow [deployment acceptance testing](deployment-testing.md) from a fresh disposable root. That guide adds packaging, installation, shell integration, removal, preservation, and offline evidence. This introductory session alone does not satisfy the [independent fresh-user release review](release-checklist.md#fresh-user-review).

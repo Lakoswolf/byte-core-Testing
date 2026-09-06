@@ -2,7 +2,7 @@
 
 Byte Core uses one `byte` command for lifecycle operations. The command separates checking, planning, applying, verifying, and backing out changes so that read-only discovery cannot silently become mutation.
 
-The current bootstrap implements `check`, guided initialization, exact-plan installation, update and removal, reversible shell integration, and local diagnostics with optional reviewed GitHub reporting. These remain experimental proofs, not a supported installed CLI. For a guided introduction, start with [Your first session with Byte](getting-started.md).
+The current bootstrap implements `check`, guided initialization, exact-plan installation, update and removal, reversible shell integration, configurable shell and operational helpers, optional guided inventory, and local diagnostics with optional reviewed GitHub reporting. These remain experimental proofs, not a supported installed CLI. For a guided introduction, start with [Your first session with Byte](getting-started.md).
 
 ## Grammar
 
@@ -26,6 +26,13 @@ byte shell plan-remove --home-root ABSOLUTE_PATH --shell bash|zsh
 byte shell remove --plan PLAN.json [--format text|json]
 byte doctor --mode off|local-only|ask-before-reporting|automatic-sanitized --component COMPONENT --phase PHASE --error-code CODE --exit-code STATUS [--configuration-schema-version VERSION] [--report-root ABSOLUTE_PATH] [--github-dry-run|--github-submit] [--repository kodiakdirus/byte-core] [--transport-root ABSOLUTE_PATH] [--format text|json]
 byte remove --deployment-root ABSOLUTE_PATH [--format text|json]
+byte inventory plan --network IPV4_CIDR --output ABSOLUTE_PATH [--mode discover|inspect] [--target IPV4_ADDRESS]
+byte inventory scan --plan ABSOLUTE_PLAN_PATH --approve PLAN_ID [--format text|json]
+byte inventory import --plan ABSOLUTE_PLAN_PATH --approve PLAN_ID --xml ABSOLUTE_XML_PATH [--format text|json]
+byte inventory lookup --capabilities ABSOLUTE_PATH --manufacturer NAME --model MODEL
+byte inventory plan-catalog --observations ABSOLUTE_PATH --selection ABSOLUTE_PATH --output ABSOLUTE_PATH [--capabilities ABSOLUTE_PATH] [--previous ABSOLUTE_PATH]
+byte inventory apply --plan ABSOLUTE_PLAN_PATH --approve PLAN_ID [--format text|json]
+byte inventory verify --plan ABSOLUTE_PLAN_PATH [--format text|json]
 ```
 
 Unknown commands and unsupported options are usage errors. A reserved command must fail clearly; it must not perform a partial or substitute operation.
@@ -137,6 +144,26 @@ Interactive apply uses text output so its preview and confirmation prompt cannot
 
 The descriptor and artifact checksums detect mismatch and accidental modification; they do not authenticate publisher identity. This proof does not migrate configuration, fetch releases, verify signatures or tag provenance, garbage-collect releases, or provide automatic update selection. It is not a supported installed command-line interface.
 
+## Optional helper commands
+
+The `helpers` namespace supplies the configurable runtime behind the sourced Bash/Zsh shortcuts. Its standalone configuration is selected by `--config ABSOLUTE_PATH`, then `BYTE_CORE_HELPERS_CONFIG`, then generic defaults. It does not extend the layered deployment resolver. The complete settings and workflow are in [Helper setup](helpers.md).
+
+```text
+byte helpers [--config ABSOLUTE_PATH] config example|validate
+byte helpers [--config ABSOLUTE_PATH] config get shell.SETTING
+byte helpers [--config ABSOLUTE_PATH] assistant new|resume -- ARGUMENTS...
+byte helpers [--config ABSOLUTE_PATH] git-status -- STATUS_ARGUMENTS...
+byte helpers [--config ABSOLUTE_PATH] prompt --shell bash|zsh
+byte helpers [--config ABSOLUTE_PATH] canisync plan
+byte helpers [--config ABSOLUTE_PATH] canisync apply --plan ABSOLUTE_PATH --approve PLAN_ID
+byte helpers [--config ABSOLUTE_PATH] labstatus plan --device NAME [--device NAME...]
+byte helpers [--config ABSOLUTE_PATH] labstatus run --plan ABSOLUTE_PATH --approve PLAN_ID
+byte helpers [--config ABSOLUTE_PATH] wakelan plan --device NAME
+byte helpers [--config ABSOLUTE_PATH] wakelan run --plan ABSOLUTE_PATH --approve PLAN_ID
+```
+
+Plans and operational results are JSON and may contain private local paths, refs, and device settings. No output is automatically persisted or sent to Byte Care. Planning is offline; operational execution checks the supported host matrix and exact approval. Configuration/plan refusals return `4`, an unsupported host or missing operational prerequisite returns `3`, failed sync preflight after approval returns `5`, partial sync or an uncertain relay timeout returns `7`, and network execution errors return `70`. A completed reachability observation with no response is not a tool error or a claim of offline state. Assistant and Git-status invocations propagate their child's exit status.
+
 ## Optional shell lifecycle
 
 The `byte shell` namespace applies the same separation to Bash and Zsh profile integration. `plan` and `plan-remove` are read-only and emit exact private-local JSON plans. `apply`, `verify`, and `remove` load those plans without guessing a home directory or profile.
@@ -154,3 +181,11 @@ Every invocation requires an explicit mode. `off` writes nothing. `local-only` p
 Local doctor modes do not access the network. `--github-dry-run` uses the user's authenticated `gh` session to search up to 100 open issues in the official repository and display the proposed create/comment action without GitHub mutation; local report storage still follows the selected mode. `--github-submit` additionally requires the full fingerprint, preserves the exact Markdown locally, limits retries after recorded success, and then asks `gh` to perform that reviewed action. GitHub authorizes the user's own account; Byte ships no token. No mode deploys a fix. See the [Byte Care contract](byte-care.md) for schema, storage, consent, version reporting, transport, and hard-crash limitations.
 
 Remote update discovery and automatic outbound reporting remain unavailable.
+
+## Optional inventory setup
+
+The `inventory` namespace keeps read-only planning, active discovery, offline import, exact-model lookup, reviewed catalog publication, and local verification separate. `--target` may repeat for inspection. Inventory file arguments must be absolute with existing parent directories. Plans and lookup emit JSON; other actions offer text or JSON result summaries. Inventory content is private deployment state and never goes through Byte Care reporting.
+
+`inventory scan`, `import`, and `apply` require the full reviewed plan ID via `--approve`; the CLI does not prompt or infer approval. The assistant should present the plan and collect approval before invoking them. Live scanning alone invokes Nmap and enforces the supported host check. Import, lookup, catalog planning/application, and verification remain offline. Malformed, failed, or out-of-scope scan output is refused; output files are exclusive and previous snapshots are preserved. There is no automatic replay of a scan.
+
+The complete [inventory contract](inventory.md) documents fixed scan limits, identity versus observation, local capability-catalog schemas, result provenance, stale-input checks, error codes, and backout. It also explains why initialization verification is not a general inventory or edited-document verifier.

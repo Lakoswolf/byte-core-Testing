@@ -36,6 +36,8 @@ Core contributions may define generic behavior, safe structure, validation, sche
 
 Updates must not overwrite deployment-owned configuration or canonical deployment documentation.
 
+Prefer configurable scripts and apps: ordinary changes to paths, targets, application choices, or presentation should not require source edits. Follow the [configuration design requirements](docs/configuration.md#designing-configurable-tools) and the [repository rule](AGENTS.md#prefer-configurable-behavior). Keep safety invariants enforced in code.
+
 ## Privacy review
 
 Byte Core is a public repository. Before submitting any change, inspect both its content and the commits being published.
@@ -81,11 +83,15 @@ While the major version is `0`, Byte Core is in initial development. Interfaces,
 
 ### Branches
 
+Use the [GitHub workflow](docs/github-workflow.md) for preparing reviewable changes, publishing within authorization, checking the exact PR head before merging, and completing cleanup. It is shared assistant guidance, not a background automation service.
+
 - `main` is the canonical integration branch.
 - The active repository ruleset prevents deletion and non-fast-forward updates to `main`.
 - The current bootstrap workflow permits reviewed, validated changes to reach `main` through normal fast-forward updates.
 - Optional `agent/*` branches are short-lived work branches. They do not represent releases or supported versions and should be removed after their reviewed changes are integrated or abandoned.
 - Byte Core does not currently define long-lived development, release, or maintenance branches.
+
+GitHub automatically deletes merged pull-request branches. Follow the [branch hygiene rule](AGENTS.md#branch-hygiene) after an authorized merge: verify the exact work was integrated, remove unused local branches, and prune stale remote-tracking refs. Preserve active work and check squash or rebase merge results before deleting branches whose commits are not ancestors of `main`. Abandoning unmerged work requires explicit authorization.
 
 ### Tags and GitHub releases
 
