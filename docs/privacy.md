@@ -4,7 +4,7 @@ Byte Core is developed in public and may run near private deployment data. This 
 
 > Byte Core owns behavior and structure; each deployment owns identity and truth.
 
-This is a design contract. The current bootstrap provides internal privacy-scanning, allowlisting, redaction, bounded input-adapter primitives, a deterministic candidate-artifact builder and CI gate, and an experimental local-only [Byte Care diagnostic workflow](byte-care.md). It does not claim that automatic reporting, hard-crash capture, package-manager publication, or a functional release is implemented.
+This is a design contract. The current bootstrap provides internal privacy-scanning, allowlisting, redaction, bounded input-adapter primitives, deterministic candidate-artifact building and packaging, a CI gate, and an experimental local-first [Byte Care diagnostic workflow](byte-care.md) with optional reviewed GitHub transport. Automatic reporting, hard-crash capture, package-manager publication, and a functional release remain unavailable.
 
 ## Security objective
 
@@ -54,7 +54,7 @@ Public examples are created from approved public requirements and fresh fictiona
 
 ## Collection and reporting boundary
 
-Byte Core does not upload prompts, transcripts, environment variables, arbitrary file contents, broad logs, or command output by default.
+Byte Care has no collection or upload interface for prompts, transcripts, environment variables, arbitrary file contents, broad logs, or command output. Its reporting interface accepts only the defined diagnostic fields.
 
 Automatic outbound reporting is unsupported for v0.1. The local workflow requires an explicit mode per invocation, privacy-scans the exact allowlisted payload before storage, and supports a full-fingerprint confirmation preview. The optional reviewed GitHub transport provides the following before transmission:
 
@@ -65,7 +65,7 @@ Automatic outbound reporting is unsupported for v0.1. The local workflow require
 5. an explicit user review and approval of the payload and destination; and
 6. a clear cancellation path that leaves the payload local.
 
-It uses only the installation owner's authenticated GitHub CLI session, accepts only the official repository, deduplicates by a stable marker, rate-limits retries, and preserves the exact transmitted Markdown locally. No maintainer credential or anonymous endpoint is included.
+It uses only the installation owner's authenticated GitHub CLI session, accepts only the official repository, searches a bounded set of open issues for a stable marker, limits retries after a recorded successful submission, and preserves the exact transmitted Markdown locally. The [transport limitations](byte-care.md#reviewed-github-transport) describe the search and failure boundaries. No maintainer credential or anonymous endpoint is included.
 
 Consent to one report does not authorize later reports, broader collection, or a different destination.
 
@@ -84,6 +84,8 @@ Unknown deployment facts remain unknown. Examples must not invent facts about a 
 ## Scanning contract
 
 The local scanner inspects only explicitly selected inputs. Current internal adapters cover Core-public files, staged Git content, release artifact directories, and already-constructed diagnostic payloads. Repository CI runs the unit suite, scans public documentation and templates, proves rejection of a runtime-generated synthetic leakage artifact, builds the deterministic v0.1 candidate directory, and scans that complete candidate before it can become release evidence.
+
+The file adapter also recognizes the exact text filenames `Dockerfile` and `.dockerignore`. Their contents receive the same bounded reads, binary/UTF-8 checks, and privacy rules as other supported public text files. CI explicitly scans `.devcontainer/`, even though that development tooling is excluded from the candidate artifact.
 
 Scanner output must identify the rule, classification, and safe location needed for review without printing the discovered value. Context must be omitted or reduced to a non-sensitive structural description.
 

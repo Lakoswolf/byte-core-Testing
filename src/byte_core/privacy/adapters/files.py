@@ -29,10 +29,12 @@ _TEXT_SUFFIXES = frozenset(
 )
 _TEXT_BASENAMES = frozenset(
     {
+        ".dockerignore",
         ".editorconfig",
         ".gitattributes",
         ".gitignore",
         "byte",
+        "Dockerfile",
         "LICENSE",
         "NOTICE",
     }

@@ -6,7 +6,7 @@ Byte Care is an opt-in, local-first diagnostic pipeline for Byte-owned failures.
 
 Schema 1 contains only:
 
-- Byte Core version;
+- Byte Core bootstrap version field;
 - component and lifecycle phase;
 - documented error and process exit codes;
 - normalized platform and architecture;
@@ -17,6 +17,8 @@ Schema 1 contains only:
 Reports do not contain hostnames, usernames, home paths, deployment paths, configuration values, inventory, credentials, environment variables, logs, stack traces, prompts, transcripts, file content, or command output.
 
 The stable fingerprint deduplicates the same bounded failure shape. It is not derived from deployment identity.
+
+The current implementation reports the fixed bootstrap version `0.0.0`, including when packaged as a `0.1.0` candidate. It does not yet derive this field from the artifact descriptor or installed release. Treat it as a bootstrap marker, not evidence of which candidate is running.
 
 ## Modes
 
@@ -39,9 +41,9 @@ The exact JSON is scanned before any report directory or file is created. Scanne
 
 The optional GitHub transport uses the installation owner's existing authenticated `gh` session. It accepts only the official `kodiakdirus/byte-core` repository and never stores or supplies a maintainer credential.
 
-Planning authenticates `gh`, reads open issue bodies from the official repository, and searches for the exact fingerprint marker. It produces either a create action or a comment on the single matching open issue. Multiple matches are ambiguous and refused. Dry-run displays the exact repository, action, title, label, destination, and Markdown without issue mutation.
+Planning authenticates `gh`, reads up to 100 open issue bodies from the official repository, and searches that returned set for the exact fingerprint marker. It produces either a create action or a comment on the single matching open issue. Multiple matches in that set are ambiguous and refused. Closed issues, comments, and open issues beyond the returned set are not searched, so deduplication is not exhaustive. Dry-run displays the exact repository, action, title, label, destination, and Markdown without issue mutation; the selected local reporting mode may still save a local report first.
 
-Submission requires the full report fingerprint again. Markdown is passed over standard input rather than command arguments and is saved locally with mode `0600` before the network mutation. Authentication and submission failures therefore retain the exact offline artifact. Successful state records the issue number and submission time. A one-hour minimum retry interval prevents retry storms, and a stale create action cannot be reused after that interval; the operator must plan again so an existing fingerprint becomes a comment.
+Submission requires the full report fingerprint. Markdown is passed over standard input rather than command arguments and is saved locally with mode `0600` before submission authentication and the network mutation. Failures after that save retain the exact offline Markdown; an earlier planning-authentication failure has only the report saved by the selected local mode. Successful state records the issue number and submission time. For the same fingerprint and transport root, a recorded success enforces a one-hour minimum retry interval and prevents reuse of a stale create action afterward. Failed submissions do not write successful-submission state, so that interval does not throttle every failed attempt. After an ambiguous network result, inspect the destination before retrying.
 
 The transport requests the documented `byte-care` label. GitHub ultimately authorizes issue creation or commenting using the user's account; Byte cannot grant that permission. Authentication, disabled issues, missing labels, insufficient repository permission, network failure, and GitHub refusal all fail without bundling or exposing credential material.
 
@@ -49,6 +51,6 @@ No report is sent automatically. GitHub submission is available only through exa
 
 ## Reliability boundary
 
-Byte-owned commands can construct a report when they retain control after a documented error. A hard interpreter, operating-system, or Codex process failure may prevent report creation. The current bootstrap has no external watcher and does not claim hard-crash capture.
+Reports are constructed through an explicit `byte doctor` invocation with caller-supplied error fields. Lifecycle failures do not automatically call Byte Care or collect evidence. A hard interpreter, operating-system, or Codex process failure may prevent report creation. The current bootstrap has no external watcher and does not claim hard-crash capture.
 
 Local report modes perform no network access. Only the explicitly selected GitHub dry-run or submit path invokes `gh`; dry-run performs authenticated reads but no issue mutation. Byte Care never deploys a fix.

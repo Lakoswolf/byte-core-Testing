@@ -29,10 +29,14 @@ The marker describes document structure only. It must not contain a deployment n
 
 The internal validator is read-only. It checks required files, exact role markers, synchronized supported schema versions, unique roles, expected top-level headings, and relative Markdown links between files in the document root.
 
+Schema 1 accepts links only among the four canonical documents, including heading fragments. External links, nested paths, and links to other files are rejected. The validator is an internal Python interface, not a standalone document-check CLI. Initialization `verify` also requires the exact original starter file set and hashes, so it is not a general verification command for edited deployment documents.
+
 Validation does not execute commands, access the network, expand environment variables, follow symbolic links, inspect targets outside the document root, or establish that documented infrastructure facts are true.
 
 ## Ownership and updates
 
-Starter templates under `templates/canonical/` are Core-managed examples. A future explicit initialization flow may copy them into a deployment. The copied files immediately become deployment-owned and routine Core installation or update must never overwrite them.
+Starter templates under `templates/canonical/` are Core-managed examples. The experimental initialization flow copies them into a new deployment. The copied files immediately become deployment-owned and routine Core installation or update must never overwrite them.
 
 Operators update the manifest when declared current state changes, the runbook when an approved procedure changes, the audit log after a reviewed action and its validation, and the notebook when durable context does not yet change an authoritative source.
+
+Optional [guided inventory](inventory.md) produces separate deployment-owned JSON observations and reviewed device snapshots. These supplement the manifest; the backend never rewrites the four documents. The assistant may propose a reviewed manifest summary based on confirmed catalog entries. Schema-1 link rules remain unchanged, so reference a JSON filename as plain text rather than a Markdown link. New files or edited starter bytes intentionally invalidate the original initialization plan's exact verification; inventory has its own plan verification.
