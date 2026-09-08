@@ -32,6 +32,13 @@ class CanonicalDocumentTests(unittest.TestCase):
         )
         self.assertEqual(before, self._hashes(TEMPLATES))
 
+    def test_audit_log_template_exposes_optional_governance_basis(self) -> None:
+        audit_log = (TEMPLATES / "audit-log.md").read_text(encoding="utf-8")
+
+        self.assertIn("## Governance Basis", audit_log)
+        self.assertIn("- Canonical digest or blob:", audit_log)
+        self.assertIn("- Controls applied:", audit_log)
+
     def test_missing_role_fails(self) -> None:
         with self._documents() as root:
             (root / "notebook.md").unlink()

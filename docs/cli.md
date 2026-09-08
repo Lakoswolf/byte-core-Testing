@@ -108,6 +108,14 @@ The initial configuration contains only `schema_version = 1`; it does not invent
 
 Plan files contain exact local target paths and are private local artifacts. They must not be committed to the public repository.
 
+After consequential work, record its governance basis in the deployment-owned
+`audit-log.md` when one influenced the activity. Record the standard name and
+version, canonical digest or blob when available, applicable addendum, controls
+applied, verification basis, validation basis, and limitations. This record is
+optional traceability metadata; Byte Core does not retrieve or require an
+external governance repository, and it must not contain credentials, private
+transcripts, or broad diagnostic output.
+
 ## Removal boundary
 
 Deployment initialization creates only deployment-owned configuration and canonical documents. Accordingly, `byte remove --deployment-root` performs a read-only preservation check for that deployment boundary. It validates the explicit deployment root, configuration schema, and canonical documents; removes nothing; and reports `core_integration_absent`.

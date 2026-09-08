@@ -24,8 +24,9 @@ class ShellHelpersTests(unittest.TestCase):
         self.work = Path(self.temporary.name).resolve()
         self.config = self.work / "helpers.toml"
         self.config.write_text("schema_version = 1\n")
+        python3 = shutil.which("python3") or sys.executable
         self.env = {
-            "HOME": str(self.work), "PATH": str(Path(sys.executable).parent) + os.pathsep + os.defpath, "TERM": "dumb",
+            "HOME": str(self.work), "PATH": str(Path(python3).parent) + os.pathsep + os.defpath, "TERM": "dumb",
             "LC_ALL": "C", "GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": "/dev/null",
             "BYTE_CORE_HELPERS_CONFIG": str(self.config),
         }
