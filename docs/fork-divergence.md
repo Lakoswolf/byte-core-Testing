@@ -2,7 +2,7 @@
 
 This log records intentional local differences for an upstream maintainer to evaluate independently. It is a review index, not a release announcement, an upstream commitment, or an exhaustive comparison of repository history. Git diffs and commits remain the source of exact code changes.
 
-Initial coverage begins with the setup-script changes against checkout baseline `d3072a1ba8ac8941afbf50cf119106d010a727ac`. Earlier differences, if any, have not been audited. This baseline identifies the local starting point; it is not evidence of the current upstream head. The entries below are local, uncommitted changes with no publication or upstream disposition verified.
+Initial coverage begins with the setup-script changes against checkout baseline `d3072a1ba8ac8941afbf50cf119106d010a727ac`. Earlier differences, if any, have not been audited. This baseline identifies the local starting point; it is not evidence of the current upstream head. The entries below are implemented in this fork. Their upstream disposition remains unverified; a fork commit is not evidence of upstream adoption.
 
 ## Maintaining the log
 
@@ -19,9 +19,9 @@ This is a manually maintained workflow supported by repository instructions. It 
 
 | ID | Difference | Local state | Upstream disposition |
 | --- | --- | --- | --- |
-| [FORK-001](#fork-001-guided-local-candidate-setup) | Guided local candidate setup | Implemented; uncommitted | Unverified |
-| [FORK-002](#fork-002-launcher-prerequisite-checks) | Launcher prerequisite checks | Implemented; uncommitted | Unverified |
-| [FORK-003](#fork-003-divergence-tracking-guidance) | Divergence tracking guidance | Implemented; uncommitted | Unverified |
+| [FORK-001](#fork-001-guided-local-candidate-setup) | Guided local candidate setup | Implemented; committed | Unverified |
+| [FORK-002](#fork-002-launcher-prerequisite-checks) | Launcher prerequisite checks | Implemented; committed | Unverified |
+| [FORK-003](#fork-003-divergence-tracking-guidance) | Divergence tracking guidance | Implemented; committed | Unverified |
 
 ## FORK-001: Guided local candidate setup
 
@@ -35,7 +35,7 @@ This is a manually maintained workflow supported by repository instructions. It 
 
 **Limits and adoption:** This composes experimental commands; it does not install prerequisites, configure a shell, authenticate releases, or provide a supported installed CLI. Install and init are separate operations, with no combined rollback. Upstream may adopt the orchestration independently of this log. Removing it requires removing its source-only tests and updating the linked documentation; deployment-owned files must remain preserved.
 
-**References:** Local commits and upstream issue/PR references pending. Depends on FORK-002 for the current complete launcher preflight.
+**References:** Implementation commit: `4b750981ca7b2c8ad2b41f15a8252a58d776aa23`. Upstream issue/PR references pending. Depends on FORK-002 for the current complete launcher preflight.
 
 ## FORK-002: Launcher prerequisite checks
 
@@ -49,7 +49,7 @@ This is a manually maintained workflow supported by repository instructions. It 
 
 **Limits and adoption:** Checks are point-in-time observations. Missing Python cannot be bootstrapped by a Python script. The wrapper does not install packages or edit `PATH`; the bare launcher can still fail before displaying readiness when Python is too old. This change currently builds on FORK-001. Removing it reopens the mismatch and requires corresponding documentation changes.
 
-**References:** Local commits and upstream issue/PR references pending.
+**References:** Implementation commit: `4b750981ca7b2c8ad2b41f15a8252a58d776aa23`. Upstream issue/PR references pending.
 
 ## FORK-003: Divergence tracking guidance
 
@@ -63,4 +63,4 @@ This is a manually maintained workflow supported by repository instructions. It 
 
 **Limits and adoption:** Coverage starts at the stated baseline; upstream disposition must be checked rather than assumed. Upstream can adopt the code proposals without adopting fork bookkeeping. Backout removes this log and its guidance references together.
 
-**References:** Local commits and upstream issue/PR references pending.
+**References:** Implementation commit: `4b750981ca7b2c8ad2b41f15a8252a58d776aa23`. Upstream issue/PR references pending.
