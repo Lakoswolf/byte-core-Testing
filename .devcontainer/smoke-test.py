@@ -41,12 +41,12 @@ def digest_files(root: Path) -> dict[str, str]:
 
 
 def main() -> int:
-    # Check before creating test state; unsupported hosts must not be bypassed.
+    # Check prerequisites before creating test state; no readiness bypass.
     check = json.loads(run([
         str(REPOSITORY / "bin/byte"), "check", "--format", "json",
     ]))
     if not check["supported"]:
-        raise RuntimeError("a supported test target is required")
+        raise RuntimeError("lifecycle prerequisites are required")
     root = Path(tempfile.mkdtemp(prefix="byte-container-smoke-")).resolve()
     stage = "candidate construction"
     try:

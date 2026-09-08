@@ -4,6 +4,8 @@ Byte Core installation planning separates Core-managed program files, Byte-gener
 
 > Byte Core owns behavior and structure; each deployment owns identity and truth.
 
+`byte check --feature lifecycle` checks Python and the current POSIX filesystem backend. OS labels are informational, and Git is not a lifecycle prerequisite. Readiness does not approve an operation or prove the selected destination is safe; the exact path, ownership, mode, symlink, and current-state checks below remain required.
+
 ## Logical layout
 
 - `CORE_ROOT/releases/VERSION/` contains immutable files from one reviewed Core artifact.
@@ -44,6 +46,8 @@ Removal planning accepts only an active, checksummed compatibility manifest and 
 
 The removal list is derived exclusively from those verified manifests. Exact-plan apply removes the activation marker first, then only listed files and empty directories. Explicit preservation roots must exist, must not overlap Core-managed paths, and are verified after removal.
 
+An exact removal replay returns `already_removed` only after the same postcondition checks used by removal verification: every managed target is absent and each declared preservation root resolves to an existing directory, with a symbolic link at the root path itself refused. A missing or non-directory preservation root returns `preserved_root_changed` (exit 4); a linked root returns `root_link_forbidden` (exit 5), without mutation. These existing checks follow ancestor links and do not establish directory identity or compare deployment document bytes; preservation evidence still requires an independent before/after comparison.
+
 Removal has no guessed rollback: deleted immutable Core files are reconstructible only from their release artifacts. An interruption stops immediately with `recovery_required`; the reviewed plan remains the exact record of removed and remaining targets. A partially applied plan cannot resume silently. Artifact signing, platform defaults, and privilege elevation remain outside this slice.
 
 ## Update planning
@@ -64,6 +68,6 @@ Failure before activation removes only unchanged paths created by that invocatio
 
 Exact replay reports `already_updated` only after the new activation, immutable manifest, compatibility copy, complete new release, and preserved previous release all verify. `byte verify --plan PLAN.json` performs the same proof without mutation.
 
-The experimental `byte update` workflow exposes read-only candidate checking and planning over the same engine. Guided apply accepts only an existing exact plan, re-derives it from current verified state and the local artifact, displays the bounded checksummed release notes and exact create targets, and requires the full plan ID before mutation. A stale plan, changed artifact, unsupported host, or cancelled confirmation performs no update.
+The experimental `byte update` workflow exposes read-only candidate checking and planning over the same engine. Guided apply accepts only an existing exact plan, re-derives it from current verified state and the local artifact, displays the bounded checksummed release notes and exact create targets, and requires the full plan ID before mutation. A stale plan, changed artifact, missing lifecycle prerequisite, or cancelled confirmation performs no update.
 
 Descriptor and artifact checksums provide integrity, not publisher authentication or tagged-release provenance. This experimental interface does not migrate deployment configuration, fetch releases, verify signatures, garbage-collect old releases, select updates automatically, or constitute a supported installed CLI.

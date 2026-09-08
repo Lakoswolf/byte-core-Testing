@@ -8,7 +8,7 @@ The current bootstrap implements `check`, guided initialization and helper setup
 
 ```text
 byte [--help]
-byte check [--format text|json]
+byte check [--feature runtime|lifecycle|inventory|inventory-scan|setup|helpers|shell-bash|shell-zsh|git|reporting] [--format text|json]
 byte init --deployment-root ABSOLUTE_PATH
 byte plan init --deployment-root ABSOLUTE_PATH
 byte plan install --artifact-root ABSOLUTE_PATH --core-root ABSOLUTE_PATH --state-root ABSOLUTE_PATH --core-version VERSION
@@ -47,7 +47,7 @@ Unknown commands and unsupported options are usage errors. A reserved command mu
 | ---: | --- | --- |
 | 0 | success | The requested operation completed and its stated postconditions hold. |
 | 2 | usage | The command, option, or argument is invalid. |
-| 3 | unsupported | The command is unavailable or the detected environment is outside the current support boundary. |
+| 3 | unsupported | The command or a required capability for the selected feature is unavailable. |
 | 4 | invalid-input | Deployment-owned input failed validation. |
 | 5 | refused | Safety or ownership checks refused the requested operation. |
 | 6 | verification-failed | An applied operation did not satisfy its expected postconditions. |
@@ -64,33 +64,27 @@ Environment-check summaries and diagnostic payloads exclude credentials, environ
 
 ## `byte check`
 
-`byte check` is read-only environment discovery. It checks:
+`byte check` is read-only feature readiness discovery. `--feature` defaults to `lifecycle`; use the [feature table](support-matrix.md#feature-readiness) to select runtime, inventory, scanning, setup, helpers, shell, Git, or reporting prerequisites.
 
-- Python is within the currently tested 3.11 through 3.14 range;
-- the operating system is macOS or Linux;
-- the process environment is POSIX-compatible;
-- the machine architecture can be normalized;
-- the complete host is an approved v0.1 target (macOS 15 or 26 on `arm64`, or Ubuntu 24.04 or explicitly identified Kubuntu 26.04 on `linux/x86_64`); and
-- Git is available and reports a parseable version.
+Every feature requires Python 3.11 or later within Python 3, without an upper minor-version ceiling. The selected backend checks its own filesystem or process capabilities. Git, Nmap, and Bash/Zsh are required only by the features that use them. Operating-system name, release, and architecture are informational; there is no operating-system allowlist.
 
-The command does not:
+For example:
 
-- create, edit, rename, or remove files;
-- read deployment configuration or canonical deployment documents;
-- inspect shell profiles;
-- execute Git operations against a repository;
-- access the network;
-- resolve credentials;
-- collect environment variables or arbitrary command output; or
-- claim that installation, initialization, updates, or removal are available.
+```text
+byte check --feature runtime --format json
+byte check --feature lifecycle --format json
+byte check --feature inventory-scan --format json
+byte check --feature shell-zsh --format json
+byte check --feature git --format json
+```
 
-A supported check returns status 0. A recognized but currently unsupported environment returns status 3 with every check result still shown. An unexpected internal failure returns status 70 with a sanitized error.
+JSON includes `feature`, `supported`, and individual `checks` with `pass`, `fail`, or `info` statuses. `supported: true` and text `Result: ready` mean the selected prerequisites passed. They do not certify platform support, complete release evidence, prove operation postconditions, or grant approval. A passing check returns status 0; missing prerequisites return status 3 with the check results shown. An unexpected internal failure returns status 70 with a sanitized error.
 
-The [v0.1 support matrix](support-matrix.md) records the exact operating-system, architecture, runtime, shell, automated-evidence, and manual-evidence boundary. A recognized operating system is not sufficient by itself to claim host support.
+The command does not create or change files, read deployment documents or shell profiles, access the network, resolve credentials, or install missing tools. It may perform bounded tool-availability/version checks and read public operating-system metadata; raw tool output and environment-variable values are excluded from reports. Informational OS identification does not query installed packages or establish readiness.
 
-Kubuntu recognition requires explicit operating-system/variant identification or a bounded local query proving the Kubuntu desktop metapackage is installed. Display names, KDE session variables, and Ubuntu ancestry alone do not qualify. Plain Ubuntu 26.04 remains unsupported. The package query is read-only and sends no traffic; raw package records are not reported. Kubuntu automated coverage uses fixtures on existing runners, while native acceptance evidence remains pending.
+Feature readiness leaves operation-specific settings, destination access, ownership, modes, symlink restrictions, exact-plan approval, and result verification enforced by the command that uses them. A missing optional dependency does not disable unrelated work. An assistant may explain a failed check or prepare a separately reviewed patch; checks never authorize automatic installation or self-modification.
 
-Zsh and shell enhancements are optional on Linux and are not environment-check prerequisites. Byte does not install a shell or modify shell profiles as part of `check`, installation, or initialization.
+The [readiness and release-evidence matrix](support-matrix.md) distinguishes implemented prerequisites, configured CI coverage, and pending native acceptance. The existing JSON key `supported` is retained for compatibility with callers, with the prerequisite meaning described above.
 
 ## Initialization lifecycle
 
@@ -144,7 +138,7 @@ The experimental top-level workflow composes these primitives:
 
 - `byte update --check` emits a deterministic eligibility summary without mutation.
 - `byte update --plan` emits the exact JSON plan without mutation.
-- `byte update --apply PLAN.json` revalidates the current installation and local artifact against that exact plan, displays the checksummed release notes and every target, and mutates only after the operator types the full plan ID. Unsupported hosts are refused before the plan is loaded or a confirmation is requested.
+- `byte update --apply PLAN.json` revalidates the current installation and local artifact against that exact plan, displays the checksummed release notes and every target, and mutates only after the operator types the full plan ID. Missing lifecycle prerequisites are refused before the plan is loaded or a confirmation is requested.
 
 Interactive apply uses text output so its preview and confirmation prompt cannot be confused with machine-readable JSON. Cancellation performs no mutation. Generic `byte apply --plan` remains the non-guided exact-plan engine.
 
@@ -178,7 +172,7 @@ byte helpers [--config ABSOLUTE_PATH] wakelan plan --device NAME
 byte helpers [--config ABSOLUTE_PATH] wakelan run --plan ABSOLUTE_PATH --approve PLAN_ID
 ```
 
-Plans and operational results are JSON and may contain private local paths, refs, and device settings. No output is automatically persisted or sent to Byte Care. Planning is offline; operational execution checks the supported host matrix and exact approval. Configuration/plan refusals return `4`, an unsupported host or missing operational prerequisite returns `3`, failed sync preflight after approval returns `5`, partial sync or an uncertain relay timeout returns `7`, and network execution errors return `70`. A completed reachability observation with no response is not a tool error or a claim of offline state. Assistant and Git-status invocations propagate their child's exit status.
+Plans and operational results are JSON and may contain private local paths, refs, and device settings. No output is automatically persisted or sent to Byte Care. Planning is offline; operational execution checks helper process prerequisites and exact approval. Configuration/plan refusals return `4`, a missing backend or operational prerequisite returns `3`, failed sync preflight after approval returns `5`, partial sync or an uncertain relay timeout returns `7`, and network execution errors return `70`. A completed reachability observation with no response is not a tool error or a claim of offline state. Assistant and Git-status invocations propagate their child's exit status.
 
 ## Optional shell lifecycle
 
@@ -204,6 +198,6 @@ Remote update discovery and automatic outbound reporting remain unavailable.
 
 The `inventory` namespace keeps read-only planning, active discovery, offline import, exact-model lookup, reviewed catalog publication, and local verification separate. `--target` may repeat for inspection. Inventory file arguments must be absolute with existing parent directories. Plans and lookup emit JSON; other actions offer text or JSON result summaries. Inventory content is private deployment state and never goes through Byte Care reporting.
 
-`inventory scan`, `import`, and `apply` require the full reviewed plan ID via `--approve`; the CLI does not prompt or infer approval. The assistant should present the plan and collect approval before invoking them. Live scanning alone invokes Nmap and enforces the supported host check. Import, lookup, catalog planning/application, and verification remain offline. Malformed, failed, or out-of-scope scan output is refused; output files are exclusive and previous snapshots are preserved. There is no automatic replay of a scan.
+`inventory scan`, `import`, and `apply` require the full reviewed plan ID via `--approve`; the CLI does not prompt or infer approval. The assistant should present the plan and collect approval before invoking them. Live scanning alone invokes Nmap and adds scanner availability to the offline inventory prerequisites. Import, lookup, catalog planning/application, and verification remain offline. Malformed, failed, or out-of-scope scan output is refused; output files are exclusive and previous snapshots are preserved. There is no automatic replay of a scan.
 
 The complete [inventory contract](inventory.md) documents fixed scan limits, identity versus observation, local capability-catalog schemas, result provenance, stale-input checks, error codes, and backout. It also explains why initialization verification is not a general inventory or edited-document verifier.

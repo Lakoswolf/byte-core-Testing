@@ -18,9 +18,9 @@ The executable entry point is `./bin/byte` inside the checkout. There is no sepa
 
 ## 1. Get the checkout and open Codex
 
-You need Git and Python 3.11 through 3.14 for the exercise. The current target hosts are Ubuntu 24.04 or Kubuntu 26.04 on x86_64 and macOS 15 or 26 on Apple silicon. The [support matrix](support-matrix.md) defines detection and pending native evidence; other hosts can read the guide, but must stop if Byte's check reports them as unsupported.
+You need Python 3.11 or later within Python 3 and the current POSIX filesystem backend for this exercise. Git is needed to clone the repository, but not to initialize the example deployment. Run `byte check --feature lifecycle` before proceeding; the [readiness and release-evidence matrix](support-matrix.md) explains feature prerequisites separately from native acceptance targets. OS name, release, or architecture alone does not block the exercise.
 
-For an isolated Linux trial with prerequisites included, the [Ubuntu dev container](dev-container.md) provides a terminal test environment. It does not install Codex inside the container or validate the conversational workflow; use its terminal instructions for that trial.
+The [Ubuntu dev container](dev-container.md) provides an isolated terminal environment for unit tests and this lifecycle walkthrough. It does not install Codex or establish native platform or conversational acceptance evidence.
 
 In a terminal, choose a folder for public source projects and run these commands one at a time:
 
@@ -43,9 +43,9 @@ Copy this fresh example request into the conversation:
 Byte, guide me through docs/getting-started.md for my first session.
 Read this checkout's AGENTS.md and use its safety and ownership rules.
 Explain what Byte does and confirm which checkout we are using.
-Run ./bin/byte check and explain the result. If it is unsupported, stop
-the setup and explain what prerequisite or platform support is missing.
-On a supported host, prepare a new disposable example outside the
+Run ./bin/byte check --feature lifecycle and explain the result. If a
+required capability is unavailable, stop setup and explain what is missing.
+When the prerequisites pass, prepare a new disposable example outside the
 checkout using only the public starter templates and fictional data.
 Save an initialization plan, explain its exact targets and backout,
 and wait for me to review it before applying it. After I approve,
@@ -54,11 +54,11 @@ Do not read real deployment data, change my shell profile, install
 system software, or publish anything. Stop after this introduction.
 ```
 
-Byte should explain the checkout and check result first. `Result: supported` means the prerequisites match the current test target; it is not a production-readiness claim. An unsupported result is a valid stopping point, not something to bypass.
+Byte should explain the checkout and check result first. `Result: ready` means the selected feature prerequisites passed; it does not certify native platform acceptance or production readiness. Missing prerequisites are a valid stopping point. Byte can explain them and prepare a separately reviewed remedy; it must not install tools or bypass checks automatically.
 
 ## 3. Review the proposed setup
 
-On a supported host, Byte should create a new temporary parent folder and save a plan beside a still-absent `deployment` folder. The plan file records exact local paths, so keep it private and outside the repository. The temporary folder and saved plan are the only preparation writes.
+When lifecycle prerequisites pass, Byte should create a new temporary parent folder and save a plan beside a still-absent `deployment` folder. The plan file records exact local paths, so keep it private and outside the repository. The temporary folder and saved plan are the only preparation writes.
 
 Before you approve initialization, the explanation should identify:
 
@@ -120,7 +120,7 @@ Use this route if you prefer to run the commands yourself or Codex cannot run lo
 ./bin/byte check
 ```
 
-Continue only after `Result: supported`. Create a disposable parent; leave its `deployment` child absent so initialization can create it:
+Continue only after `Result: ready`. Create a disposable parent; leave its `deployment` child absent so initialization can create it:
 
 ```sh
 BYTE_TUTORIAL_ROOT=$(mktemp -d)
@@ -149,11 +149,13 @@ Expect `Result: verified`. Read the files described above in your text editor. T
 
 ## When something does not work
 
+Byte follows the [troubleshooting guide](troubleshooting.md): explain the expected behavior, distinguish what was checked from what remains uncertain, and choose a useful bounded check. If you correct a fact, Byte should reconsider conclusions that depended on it. Longer investigations can use an optional private checkpoint; this introduction requires no extra document or data collection.
+
 | What you see | What to do |
 | --- | --- |
 | `byte: command not found` | Use `./bin/byte` from the checkout. This exercise does not install a command onto your `PATH`. |
 | `./bin/byte: No such file or directory` | Confirm the terminal or Codex project is the checkout containing `bin/byte`. |
-| Python or Git is missing, or `Result: unsupported` | Stop initialization. Read the failing check and the support matrix. Do not change detection or bypass the check to finish the tutorial. |
+| `Result: prerequisites unavailable` | Stop initialization and read the failed capability check. Git is needed for cloning, not initialization. Ask for an explanation or a separately reviewed remedy; do not bypass safety checks to finish the tutorial. |
 | `initialization cancelled` | No initialization was applied. Rerun the guided command when ready to review and confirm. |
 | `target_exists` | The target is already present. Preserve it; start a new disposable example instead of overwriting it. |
 | `verification_failed` | Stop and compare the saved plan with the example files. An edited starter no longer matches its initialization plan. |

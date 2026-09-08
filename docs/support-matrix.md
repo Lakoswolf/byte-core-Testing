@@ -1,64 +1,59 @@
-# Byte Core v0.1 support matrix
+# Byte Core readiness and release evidence
 
-Byte Core is pre-alpha software without a supported functional release. This matrix defines the host combinations the v0.1 implementation and release gate are intended to validate; it is not a production-support promise.
+Byte Core is pre-alpha software without a supported functional release. Runtime readiness and release acceptance answer different questions: readiness checks the prerequisites for a selected feature; release acceptance records reviewed observations for an exact candidate.
 
-Optional [guided inventory](inventory.md) uses this host check for live Nmap execution. The core prerequisite check does not require Nmap; missing Nmap refuses only live inventory scanning. Offline import and catalog tests do not establish live discovery, manufacturer capability, or native platform acceptance evidence.
+## Feature readiness
 
-## Initial host boundary
+`byte check --feature FEATURE` is read-only and defaults to `lifecycle`. Operating-system name, release, and architecture are informational. They do not form an allowlist, and an unknown label alone does not block a feature.
 
-| Operating system | Architecture | Shell coverage | Automated gate | v0.1 target |
-| --- | --- | --- | --- | --- |
-| Ubuntu 24.04 LTS | x86_64 | Bash launcher smoke test; Zsh optional and not installed by Byte | Configured in GitHub Actions | Supported target |
-| Kubuntu 26.04 LTS | x86_64 | Native Bash launcher and lifecycle evidence pending; Zsh optional | Detection and refusal fixtures run in the existing CI suite; no native Kubuntu runner configured | Supported target; native acceptance pending |
-| macOS 15 | Apple silicon (`arm64`) | Bash and Zsh launcher smoke tests | Configured in GitHub Actions | Supported target |
-| macOS 26 | Apple silicon (`arm64`) | Bash and Zsh launcher smoke tests | Configured in GitHub Actions | Supported target |
-| Other Linux distributions | Any | Not established | None | Unsupported |
-| Plain Ubuntu 26.04 without the Kubuntu evidence below | Any | Not established | Deterministic refusal tests | Unsupported |
-| Linux | `arm64` or other architectures | Not established | None | Unsupported |
-| Other or unrecognized macOS releases | Apple silicon (`arm64`) | Not established | Deterministic refusal tests | Unsupported |
-| macOS | Intel (`x86_64`) | Not established | None | Unsupported |
-| Windows, BSD, appliance operating systems, and unknown hosts | Any | Not applicable | Deterministic refusal tests | Unsupported |
+| Feature | Required capability |
+| --- | --- |
+| `runtime` | Python 3.11 or later in the Python 3 series |
+| `lifecycle` | Runtime plus the current POSIX filesystem backend |
+| `inventory` | Runtime plus POSIX secure file I/O for offline inventory work |
+| `inventory-scan` | Offline inventory prerequisites plus an available Nmap executable |
+| `setup` | Runtime plus POSIX secure file I/O |
+| `helpers` | Runtime plus POSIX secure file I/O and process capabilities; configured executables are checked by the relevant settings or operation |
+| `shell-bash` | Lifecycle prerequisites plus Bash |
+| `shell-zsh` | Lifecycle prerequisites plus Zsh |
+| `git` | Runtime plus an available Git executable with a parseable version |
+| `reporting` | Runtime plus POSIX secure file I/O for saved reports |
 
-`byte check` recognizes macOS and Linux separately from approving a complete operating-system release and architecture combination. A recognized platform with an unapproved release or architecture returns status 3 and identifies the unsupported combination without guessing compatibility.
+A passing check returns exit 0. JSON retains `supported: true`, meaning the selected prerequisites passed, and includes the selected `feature`. Check statuses are `pass`, `fail`, or `info`. Missing prerequisites return exit 3; informational host details never grant operation approval. See the [CLI contract](cli.md#byte-check).
 
-## Runtime prerequisites
+Python 3.11 is the minimum; newer Python 3 minor versions are not rejected solely because they are newer. CI exercises Python 3.11 through 3.14. That coverage is evidence for those versions, not a maximum runtime version or a guarantee about untested versions.
 
-- Python 3.11 through 3.14 are the initial CI matrix. Python 3.11 is the minimum runtime; later Python 3 versions are not claimed until exercised by CI.
-- Git must be available as `git` and return a parseable dotted numeric version. Byte Core does not yet depend on a narrower Git feature-version floor.
-- The launcher requires a POSIX process environment and `/bin/sh` behavior. Bash is exercised on the configured Ubuntu and macOS runners; native Kubuntu acceptance remains pending. Zsh is exercised on supported macOS runners, where it is native; Linux users may choose to install Zsh independently, but Byte does not require or install it.
-- Shell enhancements such as syntax highlighting are optional. The experimental shell lifecycle includes them only when a Zsh user supplies an explicit existing source file. Byte does not make them a prerequisite or install the package.
-- Runtime operation is standard-library-first and offline. CI action setup may access GitHub infrastructure; Byte lifecycle commands do not require network access.
+Git is required for Git operations, not ordinary initialization or filesystem lifecycle work. Nmap is required only for live inventory scans. The explicit `shell-bash` and `shell-zsh` readiness checks require the selected interpreter. Shell profile planning and file operations use lifecycle filesystem prerequisites, so configuration may be prepared before an interpreter is installed. Optional assistant executables, highlighters, device tools, repositories, and other configured resources retain their existing per-operation validation. An unrelated missing tool does not disable every feature.
 
-## Evidence boundary
+Readiness does not prove that a particular destination is writable, that every filesystem honors the needed semantics, or that an operation will succeed. Exact plans, path ownership, modes, symlink restrictions, current-state validation, and postcondition checks remain enforced at the operation boundary. Byte does not install prerequisites, bypass a failed safety check, modify itself, or change settings during discovery. An assistant may explain a failure and prepare a separately reviewed change under the existing approval rules.
 
-The support-matrix workflow is configured to prove unit behavior and launcher smoke tests on disposable GitHub-hosted runners. Evidence requires a passing workflow run; configuration alone is not a passing result. Even a passing run does not prove every hardware revision, distribution derivative, filesystem, local security policy, package-manager configuration, or long-running deployment.
+## Release acceptance targets
 
-The pinned operating-system labels follow GitHub's [published hosted-runner image inventory](https://github.com/actions/runner-images#available-images). A later change in GitHub's `latest` aliases does not silently expand Byte Core's support boundary.
+| Native target | Automated evidence | Required v0.1 manual record |
+| --- | --- | --- |
+| Kubuntu 26.04 LTS, `x86_64` | Identification and capability fixtures; no native Kubuntu hosted runner configured | Pending |
+| macOS 26, Apple silicon (`arm64`) | GitHub Actions unit and Bash/Zsh launcher checks configured | Pending |
 
-Before a functional v0.1 release, the release gate still requires recorded manual installation, verification, backout, preservation, and offline smoke-test evidence on the supported target platforms. Until that evidence and every other release criterion are complete, README language must continue to describe Byte Core as pre-alpha and unsupported for operational use.
+The independent fresh-user review remains separately pending. `release/v0.1/manual-evidence.json` requires exactly those two native platform records and the independent review. Ubuntu 24.04 and macOS 15 are no longer mandatory native acceptance targets; they may still run features whose prerequisites pass. Other OS releases and architectures are likewise evaluated by capability without being certified by a passing check.
 
-The current ledger intentionally records all four targets as pending in `release/v0.1/manual-evidence.json`, separately from the pending independent fresh-user review. Runtime checks and the release checker share the exact target set in [`platform_support.py`](../src/byte_core/platform_support.py). A three-platform ledger or an Ubuntu 26.04 entry cannot substitute for Kubuntu. The final gate and record format are defined in the [release checklist](release-checklist.md); no pending entry is support evidence.
+The workflow also runs unit and launcher checks on Ubuntu 24.04. The optional [Ubuntu dev container](dev-container.md) exercises disposable candidate lifecycle, shell, and offline rehearsals. Container, fixture, virtual-machine, and emulated results must be labeled accurately; they cannot replace the required native observations or independent review.
 
-The optional [Ubuntu dev container](dev-container.md) exercises Ubuntu 24.04 x86_64 user-space behavior and disposable lifecycle tests. Container or emulated results must be labeled as such; they do not replace native platform observations, live Codex integration, or an independent fresh-user review. The dev-container recipe does not extend the CI matrix or complete any evidence-ledger entry.
+The configured runner labels follow GitHub's [hosted-runner image inventory](https://github.com/actions/runner-images#available-images). CI configuration requires a passing run before it becomes evidence. Even passing checks do not establish every filesystem, hardware revision, local security policy, shell session, or live Codex integration behavior.
+
+Before a functional v0.1 release, the [release checklist](release-checklist.md) still requires reviewed installation, verification, backout, preservation, and offline observations for the exact candidate on both native targets. A passing readiness check does not change the ledger. Historical observations remain tied to their recorded candidate and cannot establish the current candidate's acceptance.
 
 ## Kubuntu 26.04 identification and remaining evidence
 
-[Issue #36](https://github.com/kodiakdirus/byte-core/issues/36) requires explicit Kubuntu 26.04 x86_64 support and isolated native lifecycle testing before v0.1. Detection, deterministic tests, and a pending ledger entry are implemented. Native lifecycle acceptance and release evidence remain pending; these code changes do not establish a functional release.
+Kubuntu identification remains useful for truthful release evidence under [issue #36](https://github.com/kodiakdirus/byte-core/issues/36). It is informational at runtime; failing to identify a flavor does not refuse otherwise available capabilities.
 
-Linux identification reads standard operating-system release metadata as data. `ID`, `VERSION_ID`, and optional `VARIANT_ID` provide programmatic identifiers; display names and derivative relationships alone do not establish a flavor. Missing or malformed required identifiers become `unknown`. Identifiers must be lowercase ASCII letters, digits, dots, underscores, or hyphens, start with a letter or digit, and fit within 64 characters. See the [os-release specification](https://manpages.ubuntu.com/manpages/resolute/man5/os-release.5.html).
+Linux identification reads standard operating-system metadata as data. `ID` and `VERSION_ID` produce a sanitized release label. `ID=kubuntu` or `ID=ubuntu` with explicit `VARIANT_ID=kubuntu` produces a Kubuntu label for the reported release. Display names and derivative relationships do not establish a flavor. Missing or malformed required identifiers become `unknown`; accepted identifiers contain lowercase ASCII letters, digits, dots, underscores, or hyphens, start with a letter or digit, and fit within 64 characters.
 
-The exact `kubuntu/26.04` release identity requires one of these criteria, followed by the separate `x86_64` architecture check:
+Identification does not invoke a package manager or inspect installed desktop packages. A Kubuntu desktop with only Ubuntu metadata therefore reports an Ubuntu label. Native acceptance review must independently establish the actual target, record how it was established, and preserve any difference from the informational label. A KDE session or Ubuntu ancestry alone does not establish native Kubuntu acceptance. Plain Ubuntu observations cannot be relabeled as Kubuntu.
 
-- `ID=kubuntu` and `VERSION_ID=26.04`.
-- `ID=ubuntu`, `VERSION_ID=26.04`, and `VARIANT_ID=kubuntu`.
-- `ID=ubuntu`, `VERSION_ID=26.04`, no `VARIANT_ID` field, and an exact local package record showing `kubuntu-desktop` for `amd64` fully installed, with no package error flag and either install or hold selection.
+macOS identification reports the major release from the standard platform API. Other or unrecognized OS identities remain `unknown`; this alone does not fail a capability check.
 
-The package fallback queries only `kubuntu-desktop:amd64` using `/usr/bin/dpkg-query`, the fixed `/var/lib/dpkg` database, disabled paging, a two-second timeout, and a minimal locale-controlled environment. It accepts only one successful exact record of at most 1,024 bytes. An unavailable query, malformed or extra output, another architecture, or an unpacked, broken, or removed package provides no flavor evidence. An explicitly different or malformed `VARIANT_ID` blocks the fallback. This query neither installs packages nor contacts package repositories. The [dpkg-query manual](https://manpages.debian.org/trixie/dpkg/dpkg-query.1.en.html) defines the queried package fields and status semantics.
+The source-only template is `release/v0.1/evidence/kubuntu-26.04-x86_64-template.md`. Required native installation, verification, backout, preservation, and offline observations remain pending. A passing host check or fixture does not complete that record.
 
-This criterion identifies an installed Kubuntu desktop environment, including an Ubuntu installation converted with the [Kubuntu desktop metapackage](https://packages.ubuntu.com/resolute/kubuntu-desktop); it does not prove which installation image was originally used. A KDE session, `ID_LIKE=ubuntu`, or a Kubuntu display name alone never qualifies. Removing the metapackage may therefore make an otherwise customized desktop unrecognized. Plain Ubuntu 26.04 remains `ubuntu/26.04` and unsupported; Ubuntu 24.04 detection retains its existing boundary. Other Kubuntu versions and architectures remain unsupported.
+## Windows and future backends
 
-No GitHub-hosted Kubuntu label is assumed. Existing hosted runners exercise fictional metadata and package-query fixtures, including refusal cases, while the [Kubuntu evidence template](../release/v0.1/evidence/kubuntu-26.04-x86_64-template.md) requires separately authorized native installation, verification, backout, preservation, and offline observations. A container, an emulated environment, a fixture, or a passing host check does not complete that record.
-
-## Expanding support
-
-A new host combination becomes a supported target only through a reviewed change that adds deterministic detection, automated coverage where feasible, documented manual evidence requirements, and known limitations. Recognition by `platform.system()` or `platform.machine()` alone is not evidence of support.
+The Python-only `runtime` readiness check can pass on Windows. The current filesystem and process backends require POSIX capabilities; native Windows lifecycle and shell integration remain future work. The POSIX `bin/byte` launcher is not a native Windows launcher. A Windows backend needs a separate reviewed design for secure filesystem operations, process behavior, launchers, and acceptance evidence. No native Windows implementation, PowerShell deployment, or release date is committed.
