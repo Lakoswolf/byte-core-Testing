@@ -14,6 +14,21 @@ Byte Core installation planning separates Core-managed program files, Byte-gener
 
 The current bootstrap requires explicit absolute roots. It can apply and verify exact install, update, and removal plans, but it does not select operating-system defaults, elevate privileges, or authenticate release provenance. The source checkout also provides deterministic candidate building and packaging; see the [release checklist](release-checklist.md).
 
+The source-only [experimental setup script](getting-started.md#experimental-installation-script-source-checkout-only) composes candidate building, saved install/init plans, full plan-ID prompts, and application/verification. It requires explicit non-overlapping new roots and retains private preparation files. Installation and initialization are separate operations: failure of initialization does not remove an already installed Core. It adds no supported installed command, package installation, or acceptance evidence.
+
+## Prerequisites
+
+The setup script checks prerequisites before creating its private preparation directory. It first requires Python 3.11–3.14 for the interpreter running the script, then uses Core's read-only readiness checks. It also runs the checkout's actual POSIX launcher with `check` to validate the runtime selection an installed launcher will use:
+
+- `python3` on `PATH` must run Python 3.11–3.14 with the standard-library `tomllib` module. Invoking the script with a compatible versioned interpreter alone is insufficient if `python3` still selects an older runtime.
+- Git must be available on `PATH` and return a parseable version.
+- The POSIX launcher must be executable through `/bin/sh`.
+- The host must match the [support matrix](support-matrix.md): macOS 15 or 26 on Apple silicon, or Ubuntu 24.04 or explicitly identified Kubuntu 26.04 on x86_64.
+
+The launcher check has a 15-second timeout and is repeated after both plan approvals, before either apply. A failure returns `3` with troubleshooting guidance; the first check creates no preparation files, and a later refusal preserves the already prepared artifact and plans without applying them. Run `./bin/byte check` from the checkout for detailed readiness output. If it fails before reporting because Python is too old, select a compatible interpreter as `python3` on your terminal's `PATH` and retry. These checks are point-in-time observations, not a guarantee against later runtime or filesystem changes.
+
+No third-party Python packages, Node.js runtime, running service, Codex installation, Zsh, or Nmap are required for this installation-and-initialization workflow. Optional shell and inventory features have separate prerequisites. The script does not install dependencies or change profiles or `PATH`; if Python is missing entirely, the terminal cannot start this Python script and a compatible interpreter must first be installed separately. Raw `byte apply` retains its own readiness checks; the additional launcher preflight belongs to the source setup script.
+
 ## Manifest contract
 
 Manifest schema 1 records the Core version, active state, Core and state roots, relative release directory, aggregate artifact digest, managed relative paths, per-file SHA-256 digests and modes, generated state paths, removable directories, and a checksum over the complete unsigned manifest.

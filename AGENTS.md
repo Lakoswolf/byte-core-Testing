@@ -90,6 +90,12 @@ Documentation accuracy is part of completion. Every change to behavior, commands
 
 This rule applies only to Core-owned public material. It never authorizes reading, importing, or rewriting deployment-owned documentation or private source material. Record newly discovered implementation gaps truthfully; documenting a gap does not fulfill an unmet safety requirement or authorize unrelated implementation work.
 
+## Fork divergence record
+
+Maintain [the fork divergence log](docs/fork-divergence.md) when adding, changing, superseding, or removing an intentional local difference in behavior, documentation, or repository guidance. Update the relevant stable entry in the same change; include rationale, affected paths, validation and limits, and verified commit or upstream references when available. Track local implementation separately from upstream disposition, and retain resolved entries. Do not assume older differences have been audited or claim upstream acceptance without evidence.
+
+Use public-safe engineering summaries only. The log must not contain transcripts, personal runtime installations, deployment facts, private diagnostics, or environment values. This is advisory maintenance guidance, not an automated tracker or authorization to publish, contact maintainers, or merge changes.
+
 ## Completion evidence
 
 Before claiming a change is complete:

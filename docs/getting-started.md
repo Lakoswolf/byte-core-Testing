@@ -147,6 +147,49 @@ The command displays the target, five files, backout, and plan ID. Confirm it ma
 
 Expect `Result: verified`. Read the files described above in your text editor. The temporary-root variable belongs to this terminal session; if you close it, recover the exact location from your local session before continuing rather than guessing a path.
 
+## Experimental installation script (source checkout only)
+
+The optional `scripts/setup_byte_core.py` automates a larger exercise: it checks the host, builds a candidate from this checkout, saves installation and initialization plans, asks for both full plan IDs, and applies and verifies each operation. This includes experimental Core installation; it goes beyond the five-file introduction. Use a reviewed public source checkout and fictional starter data. Installation remains unsupported for operational use.
+
+Run `python3 scripts/setup_byte_core.py --help` from the source checkout to inspect its arguments. The script is development tooling and is not included in installed artifacts. Every selection is explicit:
+
+| Argument | Required value |
+| --- | --- |
+| `--version` | Candidate version such as `0.1.0`, with matching local release notes. This labels the local build; it does not authenticate a release. |
+| `--core-root` | Absent absolute directory for Core releases. |
+| `--state-root` | Absent absolute directory for installation manifests and state. |
+| `--deployment-root` | Absent absolute directory for the five starter files. |
+| `--work-parent` | Existing private absolute directory for a fresh mode-`0700` preparation directory containing the artifact and mode-`0600` plans. |
+| `--plan-only` | Optional: stop after building and displaying saved plans without prompting or applying. |
+
+The three target roots must have existing directory parents and must not overlap. All selected paths must be outside the checkout and Git metadata and must not contain the checkout. Selected symlinks and parent traversal are refused; existing parent aliases are canonicalized. Paths are literal arguments: the script does not expand variables or `~`, infer home paths, or read a settings file. The invoking shell still performs its normal quoted-variable expansion. There are no implicit configuration overrides.
+
+For example, in Bash or Zsh, explicitly create a disposable private parent and use its new children. Stop if parent creation fails:
+
+```sh
+BYTE_SETUP_TRIAL=$(mktemp -d)
+```
+
+Then run:
+
+```sh
+python3 scripts/setup_byte_core.py --version 0.1.0 \
+  --work-parent "$BYTE_SETUP_TRIAL" \
+  --core-root "$BYTE_SETUP_TRIAL/core" \
+  --state-root "$BYTE_SETUP_TRIAL/state" \
+  --deployment-root "$BYTE_SETUP_TRIAL/deployment"
+```
+
+Use Python 3.11–3.14. The script checks the interpreter before importing Core and refuses an incompatible version with an actionable message. It also checks the actual POSIX launcher's `python3` and Git on `PATH` and host support before preparation and again after approval. A compatible versioned interpreter alone cannot satisfy this check when the launcher still selects an older `python3`. See [installation prerequisites](installation.md#prerequisites) for the complete requirements and troubleshooting. The script does not install Python, Git, packages, or Codex; change shell profiles or `PATH`; contact infrastructure; or publish anything. An unsupported host stops before preparation writes.
+
+Review the displayed exact targets, hashes, and backout actions before entering each plan ID. Both approvals are required before either plan is applied. Any other response or end of input cancels, retaining preparation files. `--plan-only` intentionally retains its artifact and plans for separate reviewed `byte apply --plan` and `byte verify --plan` commands; rerunning the script creates fresh preparation rather than resuming them.
+
+Success requires installation apply/verify followed by initialization apply/verify. The script prints the installed launcher, deployment location, and five file roles. This is not a supported release or a completed platform acceptance test. Read the starter files before editing them.
+
+Exit status `0` means the requested workflow completed (preparation only with `--plan-only`). Argument errors return `2`, incompatible Python or failed launcher prerequisites return `3`, wrapper refusal or cancellation returns `5`, and interruption returns `7`. Core command failures retain their [CLI exit statuses](cli.md#exit-statuses).
+
+The two operations are not one transaction. If initialization fails after installation, Core remains installed. On failure or interruption, stop and preserve the saved plans, artifact, and remaining state; the wrapper does not delete or automatically retry anything. Each Core operation retains its existing bounded recovery behavior. Follow the [installation recovery and removal contract](installation.md) before proposing removal of Core. Deployment documents require a separate explicit cleanup decision. Preparation directories remain until you inspect and explicitly remove the exact directory; plans and output contain private local paths and must not be published. Concurrent filesystem modification remains outside the wrapper's guarantees; keep the checkout, artifact, plans, and target parents unchanged while it runs.
+
 ## When something does not work
 
 | What you see | What to do |
@@ -154,6 +197,7 @@ Expect `Result: verified`. Read the files described above in your text editor. T
 | `byte: command not found` | Use `./bin/byte` from the checkout. This exercise does not install a command onto your `PATH`. |
 | `./bin/byte: No such file or directory` | Confirm the terminal or Codex project is the checkout containing `bin/byte`. |
 | Python or Git is missing, or `Result: unsupported` | Stop initialization. Read the failing check and the support matrix. Do not change detection or bypass the check to finish the tutorial. |
+| `ModuleNotFoundError: No module named 'tomllib'` from `./bin/byte` | The launcher can fail before its readiness report when `python3` is too old. Select Python 3.11–3.14 as `python3` before retrying. The experimental setup script checks its own interpreter first. |
 | `initialization cancelled` | No initialization was applied. Rerun the guided command when ready to review and confirm. |
 | `target_exists` | The target is already present. Preserve it; start a new disposable example instead of overwriting it. |
 | `verification_failed` | Stop and compare the saved plan with the example files. An edited starter no longer matches its initialization plan. |

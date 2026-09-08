@@ -14,6 +14,8 @@ Byte Core supplies the commands, templates, and working rules; Codex provides th
 
 If you are reviewing a release candidate, continue with [deployment acceptance testing](docs/deployment-testing.md) after the introduction.
 
+For guided automation of local candidate installation and starter initialization, the source checkout provides an [experimental setup script](docs/getting-started.md#experimental-installation-script-source-checkout-only). It requires explicit paths and approval of both saved plans; it does not install prerequisites or establish release acceptance evidence.
+
 After the document skeleton, explore [guided device inventory](docs/inventory.md). Its offline walkthrough uses fictional devices; live discovery is a separate, explicitly approved step with optional Nmap.
 
 For a disposable Linux environment with prerequisites included, use the [Ubuntu dev container](docs/dev-container.md). It provides a read-only source mount, a terminal test workflow, and optional Dev Containers editor configuration.
@@ -45,12 +47,12 @@ The checkout provides these experimental capabilities for disposable testing. Th
 
 | Area | Implemented behavior | Contract and limits |
 | --- | --- | --- |
-| Environment checks | Read-only `check` through a POSIX launcher and Python standard-library implementation | [CLI](docs/cli.md); Python 3.11–3.14 and the exact host matrix |
+| Environment checks | Read-only `check` through a POSIX launcher and Python standard-library implementation; setup script checks both its interpreter and launcher prerequisites | [CLI](docs/cli.md), [installation prerequisites](docs/installation.md#prerequisites); Python 3.11–3.14 and the exact host matrix |
 | Deployment initialization | Guided `init`, saved `plan init`, exact-plan `apply` and `verify`; creates a minimal TOML file and four documents | [Canonical documents](docs/canonical-documents.md); no infrastructure discovery |
 | Guided inventory | Explicit Nmap discovery/inspection plans, offline XML import, cited local model lookup, and reviewed catalog snapshots | [Inventory](docs/inventory.md); optional active probing, no automatic network selection or device configuration |
 | Configuration | Internal schema-1 layered TOML resolution with type checks, source tracking, and contained workspace-path resolution | [Configuration](docs/configuration.md); no public resolver command or schema migration |
 | Guided helper setup | Offline prerequisite checks and exact-plan creation/verification of a new mode-`0600` helper settings file | [Setup](docs/setup.md); explicit choices and approval, no overwrites, package installation, or profile changes |
-| Core lifecycle | Exact-plan install, local update, removal, verification, replay checks, and bounded failure recovery | [Installation](docs/installation.md); explicit roots and local artifacts |
+| Core lifecycle | Exact-plan install, local update, removal, verification, replay checks, and bounded failure recovery; source-only guided setup script | [Installation](docs/installation.md); explicit roots and local artifacts |
 | Guided updates | Local candidate checking and planning; exact-plan application with plan-ID confirmation | [CLI](docs/cli.md); no remote update discovery |
 | Shell integration | Reversible Bash/Zsh profile blocks with profile-mode and selected-source verification; configurable navigation/assistant helpers and optional prompt/history/highlighting/aliases | [Shell integration](docs/shell-integration.md); explicit opt-in, fixed source dependency coverage; third-party highlighting needs a fresh shell to undo |
 | Operational helpers | Exact-plan configured repository synchronization, numeric-IP reachability, direct or SSH-relayed wake requests | [Helper setup](docs/helpers.md); separate deployment-owned TOML, explicit execution approval, no automatic publication or verified power state |
@@ -106,6 +108,8 @@ Byte Core v0.1 is not intended to provide:
 See [roadmap issue #1](https://github.com/kodiakdirus/byte-core/issues/1) for the maintained architecture and release roadmap.
 
 ## Contributing
+
+Intentional local changes are indexed in the [fork divergence log](docs/fork-divergence.md), with rationale, validation, limitations, and upstream disposition for maintainer review.
 
 Byte Core is currently in a sole-contributor bootstrap stage, but thoughtful future participation is welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) before proposing changes.
 
