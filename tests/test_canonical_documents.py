@@ -38,6 +38,9 @@ class CanonicalDocumentTests(unittest.TestCase):
         self.assertIn("## Governance Basis", audit_log)
         self.assertIn("- Canonical digest or blob:", audit_log)
         self.assertIn("- Controls applied:", audit_log)
+        self.assertIn("- Evidence classification: verified | reported | inferred | assumed | unknown", audit_log)
+        self.assertIn("- Freshness state: confirmed | changed | not observable", audit_log)
+        self.assertIn("- Outcome status: blocked | implemented-not-verified | verified-not-validated | validated | closed-with-known-limitations", audit_log)
 
     def test_missing_role_fails(self) -> None:
         with self._documents() as root:

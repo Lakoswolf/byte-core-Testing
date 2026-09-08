@@ -24,6 +24,7 @@ This is a manually maintained workflow supported by repository instructions. It 
 | [FORK-001](#fork-001-guided-local-candidate-setup) | Guided local candidate setup | Implemented; committed | Unverified |
 | [FORK-002](#fork-002-launcher-prerequisite-checks) | Launcher prerequisite checks | Implemented; committed | Unverified |
 | [FORK-003](#fork-003-divergence-tracking-guidance) | Divergence tracking guidance | Implemented; committed | Unverified |
+| [FORK-004](#fork-004-governance-basis-traceability) | Governance-basis traceability | Implemented; committed | Unverified |
 
 ## FORK-001: Guided local candidate setup
 
@@ -52,6 +53,35 @@ This is a manually maintained workflow supported by repository instructions. It 
 **Limits and adoption:** Checks are point-in-time observations. Missing Python cannot be bootstrapped by a Python script. The wrapper does not install packages or edit `PATH`; the bare launcher can still fail before displaying readiness when Python is too old. This change currently builds on FORK-001. Removing it reopens the mismatch and requires corresponding documentation changes.
 
 **References:** Implementation commit: `4b750981ca7b2c8ad2b41f15a8252a58d776aa23`. Upstream issue/PR references pending.
+
+## FORK-004: Governance-basis traceability
+
+**Problem:** The external Technical & Analytical Assistance Standard can
+influence a Byte activity without leaving a durable, bounded record of which
+guidance, evidence state, freshness state, and outcome status informed it.
+
+**Implemented:** The deployment-owned audit-log starter and contracts provide an
+optional governance basis with standard identity, version, digest/blob,
+addendum, controls, evidence classification, verification and validation basis,
+freshness state, outcome status, and limitations. Byte does not retrieve the
+external standard or make it a runtime dependency.
+
+**Affected files:** `templates/canonical/audit-log.md`,
+`docs/canonical-documents.md`, `docs/cli.md`,
+`tests/test_canonical_documents.py`, and this divergence log.
+
+**Validation:** Focused canonical-document tests, the full unit suite, public
+template and documentation privacy scans, shell syntax checks, and whitespace
+checks passed. The record is optional and manually maintained; it does not
+prove that the external standard was followed or that a stated validation is
+correct.
+
+**Limits and adoption:** This is traceability metadata, not automatic
+enforcement. Removing it requires reverting the starter fields, contract text,
+test assertions, and this entry together. Upstream may adopt the terminology or
+the audit-record shape independently.
+
+**References:** Implementation commit: `368fd4e`. Upstream issue/PR references pending.
 
 ## FORK-003: Divergence tracking guidance
 

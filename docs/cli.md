@@ -112,9 +112,13 @@ After consequential work, record its governance basis in the deployment-owned
 `audit-log.md` when one influenced the activity. Record the standard name and
 version, canonical digest or blob when available, applicable addendum, controls
 applied, verification basis, validation basis, and limitations. This record is
-optional traceability metadata; Byte Core does not retrieve or require an
-external governance repository, and it must not contain credentials, private
-transcripts, or broad diagnostic output.
+optional traceability metadata. When used, classify evidence as `verified`,
+`reported`, `inferred`, `assumed`, or `unknown`; record freshness as `confirmed`,
+`changed`, or `not observable`; and use a precise outcome status such as
+`blocked`, `implemented-not-verified`, `verified-not-validated`, `validated`, or
+`closed-with-known-limitations`. Byte Core does not retrieve or require an
+external governance repository, and the record must not contain credentials,
+private transcripts, or broad diagnostic output.
 
 ## Removal boundary
 

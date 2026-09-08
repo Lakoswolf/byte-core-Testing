@@ -41,9 +41,13 @@ Operators update the manifest when declared current state changes, the runbook w
 
 For consequential work, an audit-log entry may include a governance basis: the
 guidance standard and version, canonical digest or blob when available,
-applicable addendum, controls applied, verification and validation basis, and
-known limitations. This is traceability metadata, not a request for Byte Core
-to retrieve or enforce an external standard. Missing governance metadata must
-not be replaced with an invented claim of compliance.
+applicable addendum, controls applied, evidence classification, verification and
+validation basis, freshness state, outcome status, and known limitations. Use
+`verified`, `reported`, `inferred`, `assumed`, or `unknown` for evidence
+classification. Use `confirmed`, `changed`, or `not observable` for freshness,
+and do not claim a completed outcome when its status remains blocked or
+unverified. This is traceability metadata, not a request for Byte Core to
+retrieve or enforce an external standard. Missing governance metadata must not
+be replaced with an invented claim of compliance.
 
 Optional [guided inventory](inventory.md) produces separate deployment-owned JSON observations and reviewed device snapshots. These supplement the manifest; the backend never rewrites the four documents. The assistant may propose a reviewed manifest summary based on confirmed catalog entries. Schema-1 link rules remain unchanged, so reference a JSON filename as plain text rather than a Markdown link. New files or edited starter bytes intentionally invalidate the original initialization plan's exact verification; inventory has its own plan verification.
