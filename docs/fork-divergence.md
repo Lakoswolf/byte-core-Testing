@@ -4,6 +4,8 @@ This log records intentional local differences for an upstream maintainer to eva
 
 Initial coverage begins with the setup-script changes against checkout baseline `d3072a1ba8ac8941afbf50cf119106d010a727ac`. Earlier differences, if any, have not been audited. This baseline identifies the local starting point; it is not evidence of the current upstream head. The entries below are implemented in this fork. Their upstream disposition remains unverified; a fork commit is not evidence of upstream adoption.
 
+Fork review for FORK-001 through FORK-003: [pull request #3](https://github.com/Lakoswolf/byte-core-Testing/pull/3). This targets the fork's `main`, not the upstream repository; its current review and check state is available on the pull request.
+
 ## Maintaining the log
 
 - Add a stable `FORK-NNN` entry for each distinct intentional difference in behavior, documentation, or repository guidance. Update an existing entry when refining the same change; do not create an entry for every edit or test run.
