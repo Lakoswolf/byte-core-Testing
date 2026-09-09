@@ -55,6 +55,12 @@ Syntax highlighting is never a dependency. A Zsh installation plan may include a
 
 Bash plans reject this option. Byte does not locate, download, install, upgrade, configure, or remove a syntax-highlighting package.
 
+## Setup-wizard session entrypoint
+
+The source-only [setup wizard](getting-started.md#permanent-locations-and-finishing-setup) can generate a new, reviewed deployment-owned session script that selects helper settings, adds the chosen installation to `PATH`, and sources its packaged shell asset. It then uses this unchanged shell planner to bind the custom entrypoint and separately approve/apply/verify the profile change. Existing profiles retain their unrelated bytes and modes, with backups retained. The wrapper does not change the login shell or immediately source the user profile. Bash login profiles may separately need to source `.bashrc`.
+
+Custom entrypoints bind only their explicit file, as described below; the installed asset and launcher remain covered by separate installation verification. The helper TOML is intentionally mutable deployment data. Shell removal leaves the wrapper and helper file available for reviewed cleanup.
+
 ## Current boundary
 
 This is an internal bootstrap proof, not a supported installed shell product. Optional prompt and history-keybinding customization is implemented; history files are not inspected or rewritten. Helpers do not discover repositories, install completions or dependencies, infer device configuration, automatically publish changes, or install remote wake senders. Reachability and wake requests do not prove device identity, capabilities, or power state. Manual native-platform and real application/network evidence remains pending.

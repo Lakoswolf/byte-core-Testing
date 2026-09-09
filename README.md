@@ -14,7 +14,7 @@ Byte Core supplies the commands, templates, and working rules; Codex provides th
 
 If you are reviewing a release candidate, continue with [deployment acceptance testing](docs/deployment-testing.md) after the introduction.
 
-For guided automation of local candidate installation and starter initialization, the source checkout provides an [experimental setup script](docs/getting-started.md#experimental-installation-script-source-checkout-only). It requires explicit paths and approval of both saved plans; it does not install prerequisites or establish release acceptance evidence.
+For guided automation of local candidate installation and starter initialization, the source checkout provides an [experimental setup script](docs/getting-started.md#experimental-installation-script-source-checkout-only). Run `python3 scripts/setup_byte_core.py` for yes/no guidance, location choices, optional starter documents, and a preview-only option. After installation it offers helper settings, separately approved Bash/Zsh profile integration, and starter-notebook onboarding; `--finish-setup INSTALL_PLAN` returns to those steps later. Add `--from-repo` to download fresh source from this fork, with repository/ref selection and commit review. Installation requires approval of each saved plan; it does not install prerequisites or establish release acceptance evidence.
 
 After the document skeleton, explore [guided device inventory](docs/inventory.md). Its offline walkthrough uses fictional devices; live discovery is a separate, explicitly approved step with optional Nmap.
 
