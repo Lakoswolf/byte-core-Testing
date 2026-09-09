@@ -2,6 +2,8 @@
 
 Byte Core's experimental shell integration is an explicit, reversible layer for Bash and Zsh. It does not change the login shell, install packages, select a shell framework, inspect host identity, or infer deployment paths.
 
+`byte check --feature shell-bash` or `shell-zsh` checks filesystem prerequisites and availability of the selected interpreter. Profile planning, apply, verification, and removal use lifecycle filesystem prerequisites, so they can prepare configuration before a shell is installed. Actual shell execution still needs that interpreter. Byte does not install it automatically.
+
 ## Generic shell asset
 
 [`shell/byte-shell.sh`](../shell/byte-shell.sh) provides a POSIX-compatible basic layer and loads adjacent native assets for Bash or Zsh. Repeated sourcing preserves per-shell feature preferences. Its original basic helpers remain available:

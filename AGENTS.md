@@ -62,6 +62,10 @@ Keep destructive targets explicit. Preserve unrelated user work. Do not claim su
 
 Separate repository planning from implementation when a checkpoint requires review. Do not expand work into adjacent issues without approval.
 
+## Troubleshooting and resumption
+
+For investigation and longer-work handoffs, follow [`docs/troubleshooting.md`](docs/troubleshooting.md). Establish expected and observed behavior, distinguish evidence from assumptions, choose checks that separate plausible causes, and revise affected conclusions after corrections. Use an optional compact checkpoint when it helps continuation; keep deployment notes outside public Core content and access or save them only within the authorized scope. Report verification and satisfaction of the user's objective separately. This advisory guidance preserves existing approval rules and never authorizes collection, reporting, or mutation.
+
 ## GitHub workflow
 
 For GitHub preparation, publication, PR review, merging, or cleanup, read and follow [`docs/github-workflow.md`](docs/github-workflow.md). It is the reusable Core-owned workflow, with these repository rules as the local safety baseline. Carry authorized work through validation, result verification, and eligible cleanup; preserve existing authorization without treating it as permission for unrelated actions.

@@ -27,14 +27,14 @@ def check_launcher_readiness() -> int:
         ready = False
     if not ready:
         print("Launcher prerequisite check failed. Ensure python3 on PATH is Python "
-              "3.11–3.14 with tomllib, Git is available, and the checkout's bin/byte "
+              "3.11+ with tomllib and the checkout's bin/byte "
               "is executable through /bin/sh. Run ./bin/byte check from the checkout "
-              "to inspect host support and prerequisites. Selecting a versioned "
+              "to inspect lifecycle prerequisites. Selecting a versioned "
               "Python for this script alone does not select the launcher's python3. "
               "See docs/installation.md#prerequisites. No setup plans were applied.",
               file=sys.stderr)
         return 3
-    print("Launcher prerequisite check: passed (python3 and Git on PATH; supported host).")
+    print("Launcher prerequisite check: passed (launcher Python and POSIX lifecycle prerequisites).")
     return 0
 
 
@@ -145,7 +145,7 @@ def run(args, cli, build) -> int:
           "runbook.md: reviewed operating and recovery procedures.\n"
           "audit-log.md: completed changes and validation evidence.\n"
           "notebook.md: lessons and unresolved questions.\n"
-          "The launcher requires Python 3.11–3.14 as python3 on PATH.\n"
+          "The launcher requires Python 3.11+ as python3 on PATH.\n"
           "Read starter files before editing; edits invalidate the original init verification.")
     return 0
 

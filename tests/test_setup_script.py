@@ -180,5 +180,5 @@ class LauncherReadinessTests(unittest.TestCase):
                     with mock.patch("sys.stderr", new=io.StringIO()) as errors:
                         self.assertEqual(setup.check_launcher_readiness(), 3)
                     self.assertIn("python3 on PATH", errors.getvalue())
-                    self.assertIn("Git", errors.getvalue())
+                    self.assertIn("lifecycle prerequisites", errors.getvalue())
                     self.assertIn("./bin/byte check", errors.getvalue())

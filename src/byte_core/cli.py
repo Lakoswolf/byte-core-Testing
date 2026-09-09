@@ -15,7 +15,8 @@ from enum import IntEnum
 from typing import Sequence, TextIO
 
 from . import helpers_cli, inventory_cli, setup_cli
-from .platform_support import SUPPORTED_HOSTS, host_release
+from .platform_support import host_release
+from . import prerequisites
 from .care import (
     CareError,
     build_diagnostic_report,
@@ -88,6 +89,7 @@ class CheckReport:
     command: str
     supported: bool
     checks: tuple[CheckResult, ...]
+    feature: str = "lifecycle"
 
 
 @dataclass(frozen=True)
@@ -124,6 +126,8 @@ def build_parser() -> argparse.ArgumentParser:
         help="inspect local prerequisites without making changes",
         description="Inspect local prerequisites without making changes.",
     )
+    check.add_argument("--feature", choices=prerequisites.FEATURES, default="lifecycle",
+                       help="inspect prerequisites for the selected feature")
     check.add_argument(
         "--format",
         choices=("text", "json"),
@@ -215,15 +219,18 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def collect_check_report() -> CheckReport:
+def collect_check_report(feature: str = "lifecycle") -> CheckReport:
     system = platform.system()
+    tool = prerequisites.TOOLS.get(feature)
     return build_check_report(
         system=system,
         machine=platform.machine(),
         posix=os.name == "posix",
         python_version=(sys.version_info.major, sys.version_info.minor),
-        git_version=_git_version(),
+        git_version=_git_version() if feature == "git" else None,
         host_release=_host_release(system),
+        feature=feature,
+        tool_available=shutil.which(tool) is not None if tool else None,
     )
 
 
@@ -235,52 +242,63 @@ def build_check_report(
     python_version: tuple[int, int],
     git_version: str | None,
     host_release: str,
+    feature: str = "lifecycle",
+    tool_available: bool | None = None,
+    capabilities: dict[str, bool] | None = None,
 ) -> CheckReport:
-    python_supported = (3, 11) <= python_version <= (3, 14)
-    python_value = f"{python_version[0]}.{python_version[1]}"
-    normalized_system = _normalize_system(system)
+    if feature not in prerequisites.FEATURES:
+        raise ValueError("unknown prerequisite feature")
+    available = prerequisites.capabilities(feature) if capabilities is None else capabilities
+    python_ready = python_version[0] == 3 and python_version >= (3, 11)
+    normalized_system = _safe_identifier(system)
+    normalized_system = {"darwin": "macos"}.get(normalized_system, normalized_system)
     normalized_machine = _normalize_machine(machine)
-    platform_supported = normalized_system != "unsupported" and posix
-    architecture_identified = normalized_machine != "unknown"
-    host_supported = (
-        platform_supported
-        and architecture_identified
-        and (normalized_system, normalized_machine, host_release) in SUPPORTED_HOSTS
-    )
-    git_supported = git_version is not None
+    # Metadata is bounded data for context; it never grants or denies readiness.
+    release_value = "/".join(_safe_identifier(part) for part in host_release.split("/")[:2])
+    checks = [
+        CheckResult("python", "pass" if python_ready else "fail",
+                    f"{python_version[0]}.{python_version[1]} (requires Python 3.11+)"),
+        CheckResult("platform", "info", normalized_system),
+        CheckResult("architecture", "info", normalized_machine),
+        CheckResult("host", "info", f"{normalized_system}/{normalized_machine}/{release_value}"),
+    ]
+    if feature not in {"runtime", "git"}:
+        checks.append(CheckResult("filesystem-backend", "pass" if posix else "fail",
+                                  "posix" if posix else "requires implemented POSIX backend"))
+    for name in prerequisites.capabilities(feature):
+        ready = available.get(name) is True
+        checks.append(CheckResult(name, "pass" if ready else "fail",
+                                  "available" if ready else "required OS APIs unavailable"))
+    if feature == "git":
+        checks.append(CheckResult("git", "pass" if git_version is not None else "fail",
+                                  git_version or "install Git and make git available on PATH"))
+    if tool := prerequisites.TOOLS.get(feature):
+        checks.append(CheckResult(tool, "pass" if tool_available is True else "fail",
+                                  "available on PATH" if tool_available is True
+                                  else f"install {tool} and make it available on PATH"))
+    return CheckReport(command="check", supported=all(c.status != "fail" for c in checks),
+                       checks=tuple(checks), feature=feature)
 
-    checks = (
-        CheckResult(
-            "python",
-            "pass" if python_supported else "fail",
-            python_value,
-        ),
-        CheckResult(
-            "platform",
-            "pass" if platform_supported else "fail",
-            normalized_system,
-        ),
-        CheckResult(
-            "architecture",
-            "pass" if architecture_identified else "fail",
-            normalized_machine,
-        ),
-        CheckResult(
-            "host",
-            "pass" if host_supported else "fail",
-            f"{normalized_system}/{normalized_machine}/{host_release}",
-        ),
-        CheckResult(
-            "git",
-            "pass" if git_supported else "fail",
-            git_version or "unavailable",
-        ),
-    )
-    return CheckReport(
-        command="check",
-        supported=all(check.status == "pass" for check in checks),
-        checks=checks,
-    )
+
+def _command_feature(arguments) -> str | None:
+    """Guard backend-dependent entry points before reading plans or changing state."""
+    if arguments.command in {"plan", "verify"}:
+        return "lifecycle"
+    if arguments.command == "update" and arguments.apply is None:
+        return "lifecycle"
+    if arguments.command == "shell":
+        return "lifecycle"
+    if arguments.command == "setup":
+        return "setup"
+    if arguments.command == "inventory":
+        return "inventory-scan" if arguments.inventory_action == "scan" else "inventory"
+    if arguments.command == "helpers":
+        if arguments.helper == "config" and arguments.helper_config_action == "example":
+            return None
+        return "helpers"
+    if arguments.command == "doctor" and arguments.mode in {"local-only", "ask-before-reporting"}:
+        return "reporting"
+    return None
 
 
 def _normalize_system(value: str) -> str:
@@ -294,6 +312,11 @@ def _normalize_machine(value: str) -> str:
         "amd64": "x86_64",
         "x64": "x86_64",
     }.get(machine, machine)
+
+
+def _care_architecture(value: str) -> str:
+    normalized = _normalize_machine(value)
+    return normalized if normalized in {"arm64", "x86_64"} else "unknown"
 
 
 def _host_release(system: str) -> str:
@@ -315,6 +338,11 @@ def main(
 
     try:
         arguments = parser.parse_args(argv)
+        if feature := _command_feature(arguments):
+            readiness = collect_check_report(feature)
+            if not readiness.supported:
+                output.write(_format_text(readiness))
+                return ExitStatus.UNSUPPORTED
         if arguments.command == "inventory":
             return inventory_cli.run(arguments, output, errors, collect_check_report)
         if arguments.command == "helpers":
@@ -510,7 +538,7 @@ def main(
                 error_code=arguments.error_code,
                 exit_code=arguments.exit_code,
                 platform=_normalize_system(platform.system()),
-                architecture=_normalize_machine(platform.machine()),
+                architecture=_care_architecture(platform.machine()),
                 python_version=(
                     f"{sys.version_info.major}.{sys.version_info.minor}"
                 ),
@@ -578,7 +606,7 @@ def main(
                 )
             return ExitStatus.SUCCESS
 
-        report = collect_check_report()
+        report = collect_check_report(arguments.feature)
         if arguments.format == "json":
             output.write(json.dumps(asdict(report), sort_keys=True) + "\n")
         else:
@@ -711,10 +739,10 @@ def _safe_identifier(value: str) -> str:
 
 
 def _format_text(report: CheckReport) -> str:
-    lines = ["Byte environment check"]
+    lines = [f"Byte environment check: {report.feature}"]
     for check in report.checks:
         lines.append(f"[{check.status.upper()}] {check.name}: {check.value}")
-    summary = "supported" if report.supported else "unsupported"
+    summary = "ready" if report.supported else "prerequisites unavailable"
     lines.append(f"Result: {summary}")
     return "\n".join(lines) + "\n"
 

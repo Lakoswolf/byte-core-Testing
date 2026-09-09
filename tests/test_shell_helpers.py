@@ -93,7 +93,9 @@ class ShellHelpersTests(unittest.TestCase):
 
     def test_prompt_restoration_reload_and_literal_label(self):
         marker = self.work / "must-not-exist"
-        label = f'$(touch {marker}) %F{{red}}'
+        # The shell runs in self.work; keep the label within its limit even when
+        # the host uses a deeply nested temporary directory (for example macOS).
+        label = '$(touch must-not-exist) %F{red}'
         self.config.write_text('schema_version=1\n[shell]\nprompt_label=' + json.dumps(label) + '\nprompt_color="cyan"\nprompt_directory=false\nprompt_git=false\n')
         for shell in ("bash", "zsh"):
             with self.subTest(shell=shell):

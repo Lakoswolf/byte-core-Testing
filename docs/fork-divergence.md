@@ -44,7 +44,7 @@ This is a manually maintained workflow supported by repository instructions. It 
 
 **Problem:** A compatible versioned interpreter can run the setup script while the installed POSIX launcher would select an incompatible `python3` from `PATH`.
 
-**Implemented:** The wrapper also runs the checkout's actual launcher with read-only `check`, using a 15-second timeout. This checks the launcher's Python, Git, POSIX execution, and host support before preparation and again after both approvals. Failure returns status `3` with guidance and applies neither plan. The installation contract explicitly documents required and optional tools.
+**Implemented:** The wrapper also runs the checkout's actual launcher with read-only `check`, using a 15-second timeout. After integration of upstream `912cdae`, this checks the launcher's Python and POSIX lifecycle prerequisites before preparation and again after both approvals. OS identity is informational and Git is no longer a lifecycle prerequisite. The source wrapper retains its own Python 3.11–3.14 interpreter preflight. Failure returns status `3` with guidance and applies neither plan. The installation contract explicitly documents required and optional tools.
 
 **Affected files:** `scripts/setup_byte_core.py`, `tests/test_setup_script.py`, [installation prerequisites](installation.md#prerequisites), [first-session guide](getting-started.md), [README](../README.md), and [candidate notes](release-notes/v0.1.0.md).
 

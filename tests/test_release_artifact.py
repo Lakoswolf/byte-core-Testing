@@ -121,7 +121,7 @@ class ReleaseArtifactTests(unittest.TestCase):
             statuses = gate.check(
                 artifact, evidence, require_complete=False
             )
-            self.assertEqual(len(statuses), 5)
+            self.assertEqual(len(statuses), 3)
             self.assertIn("kubuntu-26.04/x86_64: pending", statuses)
             self.assertTrue(all(item.endswith(": pending") for item in statuses))
             with self.assertRaisesRegex(
@@ -147,6 +147,26 @@ class ReleaseArtifactTests(unittest.TestCase):
             ledger.write_text(json.dumps(original))
             with self.assertRaisesRegex(gate.GateError, "invalid_manual_evidence"):
                 gate.check(artifact, ledger, require_complete=False)
+
+    def test_release_gate_rejects_retired_or_future_targets(self) -> None:
+        builder = _load_builder()
+        gate = _load_gate()
+        with tempfile.TemporaryDirectory() as temporary:
+            parent = Path(temporary)
+            artifact = builder.build("0.1.0", parent / "artifact")
+            ledger = parent / "evidence.json"
+            original = json.loads((REPOSITORY_ROOT / "release/v0.1/manual-evidence.json").read_text())
+            for operating_system, architecture in (
+                ("ubuntu-24.04", "x86_64"), ("macos-15", "arm64"), ("windows-11", "x86_64"),
+            ):
+                with self.subTest(operating_system=operating_system):
+                    data = {**original, "targets": [*original["targets"], {
+                        "operating_system": operating_system, "architecture": architecture,
+                        "status": "pending", "evidence": None,
+                    }]}
+                    ledger.write_text(json.dumps(data))
+                    with self.assertRaisesRegex(gate.GateError, "invalid_manual_evidence"):
+                        gate.check(artifact, ledger, require_complete=False)
 
     def test_release_gate_accepts_complete_reviewable_records(self) -> None:
         builder = _load_builder()

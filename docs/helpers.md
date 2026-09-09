@@ -134,7 +134,7 @@ labstatus run --plan ABSOLUTE_PRIVATE_PLAN_PATH --approve REVIEWED_PLAN_ID
 wakelan run --plan ABSOLUTE_PRIVATE_PLAN_PATH --approve REVIEWED_PLAN_ID
 ```
 
-CLI execution checks the [supported host matrix](support-matrix.md). Edited plans, changed selected-device settings, and wrong approval IDs are refused before traffic. Plan IDs bind content; they are not signatures, one-time tokens, or independent authorization. Reusing an unchanged approved network plan repeats its operation.
+CLI execution checks the [helper process capabilities](support-matrix.md#feature-readiness). Git and configured executables remain prerequisites of the operations that use them; a missing unrelated tool does not disable every helper. Edited plans, changed selected-device settings, and wrong approval IDs are refused before traffic. Plan IDs bind content; they are not signatures, one-time tokens, or independent authorization. Reusing an unchanged approved network plan repeats its operation.
 
 Reachability runs one ICMP echo process per selected address, with a bounded worker pool and deadline. Results distinguish `reachable`, `no_response`, `unavailable`, `error`, and devices with `no_addresses`. A missing reply does not prove a device is offline. There is no automatic LAN/Tailscale route selection, identity inference, inventory/catalog rewrite, or capability research. This is separate from [guided discovery](inventory.md).
 
@@ -157,5 +157,7 @@ This is not atomic across repositories. A failed fetch or later checkout operati
 Sync respects Git's explicit `GIT_CONFIG_NOSYSTEM`, `GIT_CONFIG_SYSTEM`, and `GIT_CONFIG_GLOBAL` selectors; their effective settings still receive the same filter and configuration checks and are bound to the plan. Environment overrides that redirect the repository or index are discarded. Configuration selectors do not bypass target verification or authorize execution.
 
 ## Validation boundary
+
+The current ping adapter implements Linux and macOS command semantics. On other POSIX hosts, reachability checks return `unavailable` even when the general helper prerequisite check passes. This does not block unrelated helper or lifecycle operations.
 
 Automated checks use fictional local Git repositories, fake assistant executables, clean Bash/Zsh processes, and mocked ping/UDP/SSH operations. They verify refusal, argument handling, feature restoration, and partial-failure reporting. They do not establish compatibility with a real assistant application, third-party highlighter, live device/relay, or native macOS installation. Those manual checks remain pending; normal user profiles and system files are not changed by the test suite.
