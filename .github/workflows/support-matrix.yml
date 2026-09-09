@@ -12,14 +12,13 @@ permissions:
 
 jobs:
   unit:
-    name: ${{ matrix.os }} / Python ${{ matrix.python }}
+    name: ${{ matrix.os }} / Python ${{ matrix.python }} / unit coverage
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os:
           - ubuntu-24.04
-          - macos-15
           - macos-26
         python:
           - "3.11"
@@ -38,7 +37,7 @@ jobs:
       - name: Run unit tests
         run: python -m unittest discover -s tests -v
 
-      - name: Verify supported host decision
+      - name: Check lifecycle prerequisites
         run: ./bin/byte check --format json
 
   shells:
@@ -49,7 +48,6 @@ jobs:
       matrix:
         os:
           - ubuntu-24.04
-          - macos-15
           - macos-26
     steps:
       - name: Check out repository

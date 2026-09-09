@@ -120,6 +120,8 @@ Back out an incorrect repository change with a normal reviewed revert or follow-
 
 ## Changes and review
 
+For intentional local differences, maintain the [fork divergence log](docs/fork-divergence.md) alongside the implementation. Use its stable IDs to connect rationale, validation, and eventual commit or upstream PR references. The log supplements code review; it does not establish upstream acceptance or authorize publication.
+
 Explain:
 
 - what changed;

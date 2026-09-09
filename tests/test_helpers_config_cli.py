@@ -129,7 +129,7 @@ class HelpersCliTests(unittest.TestCase):
                 plan = json.loads(output)
                 saved = Path(tmp).resolve() / "plan.json"
                 saved.write_text(output)
-                with mock.patch("byte_core.cli.collect_check_report", return_value=SimpleNamespace(supported=False)):
+                with mock.patch("byte_core.cli.collect_check_report", return_value=cli.CheckReport("check", False, (cli.CheckResult("filesystem-backend", "fail", "unavailable"),))):
                     self.assertEqual(self.invoke([*args, "run", "--plan", str(saved), "--approve", plan["id"]])[0], 3)
                 with mock.patch("byte_core.cli.collect_check_report", return_value=SimpleNamespace(supported=True)):
                     self.assertEqual(self.invoke([*args, "run", "--plan", str(saved), "--approve", "wrong"])[0], 4)

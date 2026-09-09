@@ -4,6 +4,8 @@ Byte Core installation planning separates Core-managed program files, Byte-gener
 
 > Byte Core owns behavior and structure; each deployment owns identity and truth.
 
+`byte check --feature lifecycle` checks Python and the current POSIX filesystem backend. OS labels are informational, and Git is not a lifecycle prerequisite. Readiness does not approve an operation or prove the selected destination is safe; the exact path, ownership, mode, symlink, and current-state checks below remain required.
+
 ## Logical layout
 
 - `CORE_ROOT/releases/VERSION/` contains immutable files from one reviewed Core artifact.
@@ -13,6 +15,21 @@ Byte Core installation planning separates Core-managed program files, Byte-gener
 - `DEPLOYMENT_ROOT` remains separate and is never a Core removal target.
 
 The current bootstrap requires explicit absolute roots. It can apply and verify exact install, update, and removal plans, but it does not select operating-system defaults, elevate privileges, or authenticate release provenance. The source checkout also provides deterministic candidate building and packaging; see the [release checklist](release-checklist.md).
+
+The source-only [experimental setup script](getting-started.md#experimental-installation-script-source-checkout-only) composes candidate building, saved install/init plans, full plan-ID prompts, and application/verification. Run it without arguments for a guided wizard, or supply explicit locations. `--from-repo` first downloads a chosen GitHub revision into a fresh checkout and requests approval before using its code; `--download-only` retains source for inspection. The downloader requires Git, while local lifecycle setup does not. See the first-session guide for repository/ref options and source trust boundaries. It confirms non-overlapping new roots, offers installation without starter initialization and preparation-only mode, and retains private preparation files. Installation and initialization are separate operations: failure of initialization does not remove an already installed Core. After guided installation, optional finish-setup can create helper settings and a session entrypoint, then separately plan/apply/verify profile integration. `--finish-setup INSTALL_PLAN` verifies the existing installation before offering those steps again; it does not relocate a temporary installation. No package installation or release acceptance evidence is implied.
+
+## Prerequisites
+
+The setup script checks prerequisites before creating its private preparation directory. It first requires Python 3.11 or later within Python 3 for the interpreter running the script, then uses Core's read-only readiness checks. It also runs the checkout's actual POSIX launcher with `check` to validate the runtime selection an installed launcher will use:
+
+- `python3` on `PATH` must run Python 3.11+ with the standard-library `tomllib` module. Invoking the script with a compatible versioned interpreter alone is insufficient if `python3` still selects an older runtime.
+- Git is needed to clone the checkout, but is not required by the local setup lifecycle.
+- The POSIX launcher must be executable through `/bin/sh`.
+- The current lifecycle backend requires POSIX filesystem capabilities. OS labels are informational; the [support matrix](support-matrix.md) separately records release evidence requirements.
+
+The launcher check has a 15-second timeout and is repeated after both plan approvals, before either apply. A failure returns `3` with troubleshooting guidance; the first check creates no preparation files, and a later refusal preserves the already prepared artifact and plans without applying them. Run `./bin/byte check` from the checkout for detailed readiness output. If it fails before reporting because Python is too old, select a compatible interpreter as `python3` on your terminal's `PATH` and retry. These checks are point-in-time observations, not a guarantee against later runtime or filesystem changes.
+
+No third-party Python packages, Node.js runtime, running service, Codex installation, Zsh, or Nmap are required for this installation-and-initialization workflow. Optional shell and inventory features have separate prerequisites. The script does not install dependencies or change profiles or `PATH`; if Python is missing entirely, the terminal cannot start this Python script and a compatible interpreter must first be installed separately. Raw `byte apply` retains its own readiness checks; the additional launcher preflight belongs to the source setup script.
 
 ## Manifest contract
 
@@ -44,6 +61,8 @@ Removal planning accepts only an active, checksummed compatibility manifest and 
 
 The removal list is derived exclusively from those verified manifests. Exact-plan apply removes the activation marker first, then only listed files and empty directories. Explicit preservation roots must exist, must not overlap Core-managed paths, and are verified after removal.
 
+An exact removal replay returns `already_removed` only after the same postcondition checks used by removal verification: every managed target is absent and each declared preservation root resolves to an existing directory, with a symbolic link at the root path itself refused. A missing or non-directory preservation root returns `preserved_root_changed` (exit 4); a linked root returns `root_link_forbidden` (exit 5), without mutation. These existing checks follow ancestor links and do not establish directory identity or compare deployment document bytes; preservation evidence still requires an independent before/after comparison.
+
 Removal has no guessed rollback: deleted immutable Core files are reconstructible only from their release artifacts. An interruption stops immediately with `recovery_required`; the reviewed plan remains the exact record of removed and remaining targets. A partially applied plan cannot resume silently. Artifact signing, platform defaults, and privilege elevation remain outside this slice.
 
 ## Update planning
@@ -64,6 +83,6 @@ Failure before activation removes only unchanged paths created by that invocatio
 
 Exact replay reports `already_updated` only after the new activation, immutable manifest, compatibility copy, complete new release, and preserved previous release all verify. `byte verify --plan PLAN.json` performs the same proof without mutation.
 
-The experimental `byte update` workflow exposes read-only candidate checking and planning over the same engine. Guided apply accepts only an existing exact plan, re-derives it from current verified state and the local artifact, displays the bounded checksummed release notes and exact create targets, and requires the full plan ID before mutation. A stale plan, changed artifact, unsupported host, or cancelled confirmation performs no update.
+The experimental `byte update` workflow exposes read-only candidate checking and planning over the same engine. Guided apply accepts only an existing exact plan, re-derives it from current verified state and the local artifact, displays the bounded checksummed release notes and exact create targets, and requires the full plan ID before mutation. A stale plan, changed artifact, missing lifecycle prerequisite, or cancelled confirmation performs no update.
 
 Descriptor and artifact checksums provide integrity, not publisher authentication or tagged-release provenance. This experimental interface does not migrate deployment configuration, fetch releases, verify signatures, garbage-collect old releases, select updates automatically, or constitute a supported installed CLI.

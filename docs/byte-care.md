@@ -2,6 +2,8 @@
 
 Byte Care is an opt-in, local-first diagnostic pipeline for Byte-owned failures. The v0.1 bootstrap constructs only a minimal allowlisted report and does not collect arbitrary context.
 
+The assistant's [troubleshooting guidance](troubleshooting.md) helps explain evidence and choose the next check. Its optional investigation checkpoints remain separate deployment-owned notes; they add no report fields, attachments, collection, or submission behavior to Byte Care.
+
 ## Report schema
 
 Schema 1 contains only:
@@ -32,6 +34,8 @@ Every invocation requires an explicit mode:
 There is no implicit or remembered consent. A choice for one invocation does not authorize a later report or a different destination.
 
 ## Local storage
+
+`byte check --feature reporting` checks the current POSIX secure file I/O prerequisites for saving reports. `off` and the refusal of `automatic-sanitized` do not need a storage backend. GitHub transport retains its separate `gh`, authentication, and review requirements; a reporting readiness result does not authorize submission.
 
 The caller selects an explicit absolute report root. Byte creates it with mode `0700` when absent and creates reports exclusively with mode `0600`. The filename is the stable fingerprint. Exact repeats deduplicate; a conflicting existing target is refused.
 

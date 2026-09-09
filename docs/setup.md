@@ -2,6 +2,10 @@
 
 The experimental `byte setup` workflow turns an explicitly prepared standalone helpers TOML into a new deployment-owned settings file, checks local prerequisites, and provides the next shell integration steps. It remains a bootstrap proof, with no supported installed CLI or production release claim.
 
+`byte check --feature setup` checks the current POSIX secure file I/O backend. The settings-specific readiness checks below remain separate: they validate only explicitly configured choices, without a blanket Git or operating-system requirement.
+
+The source-checkout wizard `python3 scripts/setup_byte_core.py` can now collect basic helper choices after installation, or use `--finish-setup INSTALL_PLAN` against a verified installation. It composes this exact-plan workflow and the separate shell-profile workflow, with an explicitly reviewed deployment-owned session script to persist settings selection. See the [first-session guide](getting-started.md#permanent-locations-and-finishing-setup). The `byte setup` command itself retains the boundary described below.
+
 ## Prepare the choices
 
 Ask Byte to help configure the [shell helpers](helpers.md). The assistant should explain available settings, identify which features you want, and prepare only settings you have supplied or confirmed. Keep unknown paths, application choices, repositories, device addresses, and relays unset. Ordinary customization belongs in the standalone TOML; editing Core scripts is unnecessary. This file is separate from `deployment.toml` and uses the [helper settings reference](helpers.md#settings-reference).

@@ -2,6 +2,8 @@
 
 Byte Core's experimental shell integration is an explicit, reversible layer for Bash and Zsh. It does not change the login shell, install packages, select a shell framework, inspect host identity, or infer deployment paths.
 
+`byte check --feature shell-bash` or `shell-zsh` checks filesystem prerequisites and availability of the selected interpreter. Profile planning, apply, verification, and removal use lifecycle filesystem prerequisites, so they can prepare configuration before a shell is installed. Actual shell execution still needs that interpreter. Byte does not install it automatically.
+
 ## Generic shell asset
 
 [`shell/byte-shell.sh`](../shell/byte-shell.sh) provides a POSIX-compatible basic layer and loads adjacent native assets for Bash or Zsh. Repeated sourcing preserves per-shell feature preferences. Its original basic helpers remain available:
@@ -52,6 +54,12 @@ Plan and backup files contain exact local paths and profile content or copies. T
 Syntax highlighting is never a dependency. A Zsh installation plan may include an explicit absolute `--syntax-highlighting` file selected by the operator. Byte checks that file is readable, records its checksum and mode, and adds it to the exact managed block. Omitting the option produces no syntax-highlighting behavior.
 
 Bash plans reject this option. Byte does not locate, download, install, upgrade, configure, or remove a syntax-highlighting package.
+
+## Setup-wizard session entrypoint
+
+The source-only [setup wizard](getting-started.md#permanent-locations-and-finishing-setup) can generate a new, reviewed deployment-owned session script that selects helper settings, adds the chosen installation to `PATH`, and sources its packaged shell asset. It then uses this unchanged shell planner to bind the custom entrypoint and separately approve/apply/verify the profile change. Existing profiles retain their unrelated bytes and modes, with backups retained. The wrapper does not change the login shell or immediately source the user profile. Bash login profiles may separately need to source `.bashrc`.
+
+Custom entrypoints bind only their explicit file, as described below; the installed asset and launcher remain covered by separate installation verification. The helper TOML is intentionally mutable deployment data. Shell removal leaves the wrapper and helper file available for reviewed cleanup.
 
 ## Current boundary
 

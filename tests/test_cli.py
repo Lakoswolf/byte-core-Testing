@@ -46,7 +46,7 @@ class CliTests(unittest.TestCase):
 
         self.assertEqual(status, cli.ExitStatus.SUCCESS)
         self.assertIn("Byte environment check", output.getvalue())
-        self.assertIn("Result: supported", output.getvalue())
+        self.assertIn("Result: ready", output.getvalue())
 
     def test_check_json_is_deterministic_and_machine_readable(self) -> None:
         report = self._report(supported=True)
@@ -75,7 +75,7 @@ class CliTests(unittest.TestCase):
             status = cli.main(["check"], stdout=output)
 
         self.assertEqual(status, cli.ExitStatus.UNSUPPORTED)
-        self.assertIn("Result: unsupported", output.getvalue())
+        self.assertIn("Result: prerequisites unavailable", output.getvalue())
 
     def test_automatic_doctor_reporting_is_explicitly_unsupported(self) -> None:
         errors = io.StringIO()
@@ -368,7 +368,7 @@ class CliTests(unittest.TestCase):
                 ),
                 cli.ExitStatus.UNSUPPORTED,
             )
-            self.assertIn("Result: unsupported", output.getvalue())
+            self.assertIn("Result: prerequisites unavailable", output.getvalue())
 
     @mock.patch.object(cli, "collect_check_report")
     def test_guided_update_refuses_stale_plan_before_confirmation(
@@ -620,6 +620,69 @@ class CliTests(unittest.TestCase):
             self.assertEqual(json.loads(verified.getvalue())["code"], "verified")
             self.assertEqual(sentinel.read_text(encoding="utf-8"), "fictional\n")
 
+            replayed = io.StringIO()
+            self.assertEqual(
+                cli.main(
+                    ["apply", "--plan", str(plan_path), "--format", "json"],
+                    stdin=io.StringIO(""), stdout=replayed,
+                ),
+                cli.ExitStatus.SUCCESS,
+            )
+            self.assertEqual(json.loads(replayed.getvalue())["code"], "already_removed")
+            self.assertEqual(sentinel.read_text(encoding="utf-8"), "fictional\n")
+
+    @mock.patch.object(cli, "collect_check_report")
+    def test_removal_replay_refuses_invalid_preservation_roots(self, collect) -> None:
+        collect.return_value = self._report(supported=True)
+        for replacement in ("missing", "file", "symlink"):
+            with self.subTest(replacement=replacement), tempfile.TemporaryDirectory() as temporary:
+                parent = Path(temporary)
+                deployment = parent / "deployment"
+                deployment.mkdir()
+                sentinel = deployment / "notebook.md"
+                original = b"Fictional replay preservation sentinel.\n"
+                sentinel.write_bytes(original)
+                install = build_install_plan(
+                    INSTALL_ARTIFACT, parent / "core", parent / "state", "0.1.0"
+                )
+                apply_installation(install)
+                removal = build_removal_plan(
+                    parent / "state" / "installation.json",
+                    preserve_roots=(str(deployment),),
+                )
+                plan_path = parent / "removal.json"
+                plan_path.write_text(serialize_installation_plan(removal), encoding="utf-8")
+                arguments = ["apply", "--plan", str(plan_path), "--format", "json"]
+                self.assertEqual(
+                    cli.main(arguments, stdin=io.StringIO(""), stdout=io.StringIO()),
+                    cli.ExitStatus.SUCCESS,
+                )
+                saved = parent / "saved-deployment"
+                deployment.rename(saved)
+                if replacement == "file":
+                    deployment.write_bytes(b"Fictional replacement file.\n")
+                elif replacement == "symlink":
+                    deployment.symlink_to(saved, target_is_directory=True)
+
+                output, errors = io.StringIO(), io.StringIO()
+                self.assertEqual(
+                    cli.main(arguments, stdin=io.StringIO(""), stdout=output, stderr=errors),
+                    cli.ExitStatus.REFUSED if replacement == "symlink" else cli.ExitStatus.INVALID_INPUT,
+                )
+                self.assertEqual(output.getvalue(), "")
+                expected_error = "root_link_forbidden" if replacement == "symlink" else "preserved_root_changed"
+                self.assertEqual(errors.getvalue(), f"byte: {expected_error}\n")
+                self.assertEqual((saved / "notebook.md").read_bytes(), original)
+                self.assertFalse((parent / "core").exists())
+                self.assertFalse((parent / "state").exists())
+                if replacement == "file":
+                    self.assertEqual(deployment.read_bytes(), b"Fictional replacement file.\n")
+                elif replacement == "symlink":
+                    self.assertTrue(deployment.is_symlink())
+                    self.assertEqual(deployment.readlink(), saved)
+                else:
+                    self.assertFalse(deployment.exists())
+
     def test_update_plan_command_is_json_and_read_only(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             parent = Path(temporary)
@@ -804,7 +867,7 @@ class CliTests(unittest.TestCase):
             mock.patch.object(cli.shutil, "which", return_value="git"),
             mock.patch.object(cli.subprocess, "run", return_value=completed),
         ):
-            report = cli.collect_check_report()
+            report = cli.collect_check_report("git")
 
         values = {check.name: check.value for check in report.checks}
         self.assertEqual(values["platform"], "linux")
@@ -812,50 +875,89 @@ class CliTests(unittest.TestCase):
         self.assertEqual(values["host"], "linux/x86_64/ubuntu/24.04")
         self.assertEqual(values["git"], "2.50.1")
 
-    def test_support_matrix_decisions_are_exact(self) -> None:
-        cases = (
-            ("Darwin", "arm64", "macos/15", True),
-            ("Darwin", "arm64", "macos/26", True),
-            ("Darwin", "arm64", "macos/25", False),
-            ("Darwin", "x86_64", "macos/26", False),
-            ("Linux", "amd64", "ubuntu/24.04", True),
-            ("Linux", "x86_64", "debian/13", False),
-            ("Linux", "aarch64", "ubuntu/24.04", False),
-            ("Windows", "AMD64", "unknown", False),
-            ("FictionOS", "mystery", "unknown", False),
-        )
-        for system, machine, host_release, supported in cases:
-            with self.subTest(
-                system=system, machine=machine, host_release=host_release
-            ):
-                report = cli.build_check_report(
-                    system=system,
-                    machine=machine,
-                    posix=system != "Windows",
-                    python_version=(3, 11),
-                    git_version="2.50.1",
-                    host_release=host_release,
-                )
-                self.assertEqual(report.supported, supported)
-
-    def test_runtime_matrix_has_bounded_python_support(self) -> None:
-        for version, supported in (
-            ((3, 10), False),
-            ((3, 11), True),
-            ((3, 14), True),
-            ((3, 15), False),
-            ((4, 0), False),
+    def test_readiness_does_not_gate_os_version_or_architecture(self) -> None:
+        for system, machine, release in (
+            ("Darwin", "arm64", "macos/15"),
+            ("Darwin", "x86_64", "macos/26"),
+            ("Linux", "amd64", "ubuntu/24.04"),
+            ("Linux", "x86_64", "kubuntu/26.04"),
+            ("Linux", "riscv64", "debian/13"),
+            ("Linux", "aarch64", "unknown"),
+            ("FreeBSD", "unknown", "unknown"),
+            ("FictionOS", "mystery", "unknown"),
         ):
+            with self.subTest(system=system, machine=machine, release=release):
+                report = cli.build_check_report(
+                    system=system, machine=machine, posix=True,
+                    python_version=(3, 11), git_version=None, host_release=release,
+                )
+                self.assertTrue(report.supported)
+                for item in report.checks:
+                    if item.name in {"platform", "architecture", "host"}:
+                        self.assertEqual(item.status, "info")
+
+    def test_runtime_requires_minimum_python_without_ci_minor_ceiling(self) -> None:
+        for version, ready in (((3, 10), False), ((3, 11), True),
+                               ((3, 14), True), ((3, 15), True), ((4, 0), False)):
             with self.subTest(version=version):
                 report = cli.build_check_report(
-                    system="Linux",
-                    machine="x86_64",
-                    posix=True,
-                    python_version=version,
-                    git_version="2.50.1",
-                    host_release="ubuntu/24.04",
+                    system="Windows", machine="AMD64", posix=False,
+                    python_version=version, git_version=None, host_release="unknown",
+                    feature="runtime",
                 )
-                self.assertEqual(report.supported, supported)
+                self.assertEqual(report.supported, ready)
+
+    def test_missing_prerequisites_refuse_before_loading_or_applying_plan(self):
+        report = cli.build_check_report(
+            system="Windows", machine="AMD64", posix=False,
+            python_version=(3, 11), git_version=None, host_release="unknown",
+        )
+        commands = (
+            ["apply", "--plan", "unused-fictional-plan.json"],
+            ["verify", "--plan", "unused-fictional-plan.json"],
+            ["plan", "init", "--deployment-root", "/fictional/deployment"],
+            ["setup", "apply", "--plan", "/fictional/plan.json", "--approve", "unused"],
+            ["inventory", "import", "--plan", "/fictional/plan.json", "--approve", "unused",
+             "--xml", "/fictional/input.xml"],
+        )
+        with mock.patch.object(cli, "collect_check_report", return_value=report), \
+                mock.patch.object(cli, "load_plan") as load, \
+                mock.patch.object(cli, "apply_initialization") as apply, \
+                mock.patch.object(cli.setup_cli, "run") as setup, \
+                mock.patch.object(cli.inventory_cli, "run") as inventory:
+            for command in commands:
+                with self.subTest(command=command):
+                    self.assertEqual(cli.main(command, stdout=io.StringIO()), 3)
+            for operation in (load, apply, setup, inventory):
+                operation.assert_not_called()
+
+    def test_optional_dependencies_only_block_their_selected_feature(self):
+        facts = dict(system="Linux", machine="unknown", posix=True,
+                     python_version=(3, 11), git_version=None, host_release="unknown")
+        for feature, ready in (("runtime", True), ("lifecycle", True), ("inventory", True),
+                               ("git", False), ("inventory-scan", False),
+                               ("shell-bash", False), ("shell-zsh", False)):
+            with self.subTest(feature=feature):
+                report = cli.build_check_report(**facts, feature=feature, tool_available=False)
+                self.assertEqual(report.supported, ready)
+        self.assertTrue(cli.build_check_report(**facts, feature="shell-zsh", tool_available=True).supported)
+        self.assertFalse(cli.build_check_report(**facts, capabilities={"filesystem-api": False}).supported)
+        self.assertFalse(cli.build_check_report(**facts, feature="setup",
+                         capabilities={"filesystem-api": True, "guarded-io-api": False}).supported)
+
+    def test_lifecycle_check_never_runs_git_or_installs_missing_tools(self):
+        with mock.patch.object(cli, "_git_version", side_effect=AssertionError("Git not required")), \
+                mock.patch.object(cli.shutil, "which", return_value=None), \
+                mock.patch.object(cli.subprocess, "run", side_effect=AssertionError("no commands")):
+            self.assertTrue(cli.collect_check_report().supported)
+            self.assertFalse(cli.collect_check_report("shell-zsh").supported)
+
+    def test_feature_selection_and_care_unknown_architecture(self):
+        with mock.patch.object(cli, "collect_check_report", return_value=self._report(supported=True)) as collect:
+            self.assertEqual(cli.main(["check", "--feature", "runtime"], stdout=io.StringIO()), 0)
+            collect.assert_called_once_with("runtime")
+        self.assertEqual(cli._care_architecture("riscv64"), "unknown")
+        self.assertEqual(cli._care_architecture("AMD64"), "x86_64")
 
     def test_missing_host_release_is_unknown(self) -> None:
         with mock.patch.object(

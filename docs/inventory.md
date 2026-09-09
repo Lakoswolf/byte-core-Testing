@@ -18,9 +18,11 @@ The workflow is: **review a scan plan → collect observations → confirm devic
 
 Core owns this behavior. The selected networks, observations, device identities, catalogs, and source evidence belong to the deployment. Keep all real inputs and outputs in private local storage outside Core and other public repositories. The implementation refuses output inside the running Core tree or Git metadata; it cannot determine whether another directory will later be published.
 
+When explaining uncertain findings, follow the [troubleshooting guidance](troubleshooting.md). Its evidence labels describe the assistant's reasoning without changing inventory fields or promoting declared identity, service hints, or catalog claims into verified live state. User corrections require reconsidering affected conclusions; additional probing still requires its own reviewed plan.
+
 ## Discovery scope and prerequisites
 
-Live scanning requires a host accepted by `byte check` and an operator-installed `nmap` on `PATH`. Byte never installs it or requests elevated execution. Other inventory stages require Python and POSIX filesystem semantics but do not invoke Nmap or enforce the live host matrix.
+`byte check --feature inventory` checks the Python and POSIX secure file I/O prerequisites for offline inventory work. `byte check --feature inventory-scan` additionally requires an operator-installed `nmap` on `PATH`. OS labels do not gate either feature. Byte never installs Nmap or requests elevated execution; missing Nmap disables scanning while offline work remains available.
 
 The initial backend accepts one explicit canonical IPv4 CIDR in RFC 1918 private space or RFC 5737 documentation space, with at most 256 addresses. Host bits in the CIDR are refused instead of silently widening the scope. Discovery excludes the network and broadcast addresses for prefixes shorter than `/31`. IPv6, publicly routed ranges, hostname targets, automatic route/interface selection, and cross-network discovery are not implemented. The operating system routes the explicitly approved addresses; the backend does not prove they are on a particular local interface. The assistant must resolve and review the intended network before scanning, especially with VPNs or containers.
 
@@ -154,7 +156,7 @@ Scan approval binds scope and destination, not the future observations. Verifica
 
 | Error | Next step |
 | --- | --- |
-| `nmap_unavailable` / `inventory_host_unsupported` | Live scanning is unavailable; explain the prerequisite or use an explicitly supplied offline input. Do not install software or bypass the host check implicitly. |
+| Prerequisite check (exit `3`) / `nmap_unavailable` | Live scanning is unavailable; explain the prerequisite or use an explicitly supplied offline input. Do not install software or bypass prerequisite checks implicitly. |
 | `inventory_not_approved` | Review the plan; the supplied ID did not approve it. |
 | `inventory_network_invalid` / `inventory_target_out_of_scope` | Resolve the exact intended scope; do not widen it automatically. |
 | `inventory_target_exists` | Preserve the existing file and choose a fresh result path. Repeating a scan requires a new destination and reviewed plan. |
