@@ -29,6 +29,9 @@ class FinishSetupTests(unittest.TestCase):
         self.profile.write_bytes(self.original)
         self.profile.chmod(0o640)
         self.readiness = mock.patch.object(cli, "collect_check_report", return_value=cli.CheckReport("check", True, ()))
+        self.python_choice = mock.patch.object(setup, "python_path_choice", return_value=(None, False))
+        self.python_choice.start()
+        self.addCleanup(self.python_choice.stop)
         self.readiness.start()
         self.addCleanup(self.readiness.stop)
         artifact = build("0.1.0", self.root / "artifact")
@@ -195,6 +198,15 @@ class FinishSetupTests(unittest.TestCase):
                                  "fixture", str(self.wrapper)], capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stdout.splitlines()[0], str(self.release / "bin/byte"))
+
+    def test_failed_fresh_python_after_apply_preserves_profile_and_backup(self):
+        with mock.patch.object(setup, 'python_path_choice', return_value=(None, True)), \
+                mock.patch.object(setup, 'fresh_python_check', return_value=False):
+            self.assertEqual(self.execute(['y', '', 'n'] + self.shell_answers()), 3)
+        self.assertTrue(self.profile.read_bytes().startswith(self.original))
+        self.assertTrue(self.wrapper.exists())
+        self.assertTrue(any(path.read_bytes() == self.original
+                            for path in (self.home / '.byte-backups').iterdir()))
 
 
 if __name__ == "__main__":

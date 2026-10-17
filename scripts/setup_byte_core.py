@@ -354,11 +354,83 @@ def helper_choices() -> str:
     return "\n".join(lines) + "\n"
 
 
-def session_script(release: Path, helpers: Path | None) -> str:
+def fresh_python_check(shell: str, home: str) -> bool:
+    """Run only after permission to execute the selected startup files."""
+    env = dict(os.environ)
+    env["PATH"] = env.pop("BYTE_SETUP_ORIGINAL_PATH", env.get("PATH", os.defpath))
+    env["HOME"] = home
+    env.pop("BASH_ENV", None)
+    env.pop("ENV", None)
+    code = "python3 -c 'import sys, tomllib; sys.exit(not (sys.version_info.major == 3 and sys.version_info >= (3, 11)))'"
+    if shell == "bash":
+        command = [shutil.which(shell), "--noprofile", "--rcfile", str(Path(home) / ".bashrc"), "-ic", code]
+    else:
+        env["ZDOTDIR"] = home
+        command = [shutil.which(shell), "-ic", code]
+    try:
+        result = subprocess.run(command, env=env, stdin=subprocess.DEVNULL,
+                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                                timeout=15, check=False)
+        return result.returncode == 0
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+
+
+def python_path_choice(shell: str, home: str, *, plan_only: bool) -> tuple[Path | None, bool]:
+    print("Fresh-shell checks execute your selected shell's startup files, which may run other commands. "
+          "They test interactive startup, not every terminal's login configuration.")
+    if plan_only:
+        print("Preview only: startup files will not be executed. Python PATH readiness remains unverified.")
+        return None, False
+    if not yes_no("Run fresh-shell Python checks before and after approved profile setup?"):
+        print("Python PATH readiness remains unverified. Configure Python manually if needed.")
+        return None, False
+    if fresh_python_check(shell, home):
+        print("A fresh interactive shell already finds Python 3.11+ with tomllib; no Python PATH change needed.")
+        return None, True
+    executable = shutil.which("python3")
+    if not executable or not Path(executable).is_absolute():
+        raise ValueError("select a compatible python3 through an absolute PATH entry before persisting it")
+    directory = Path(executable).parent
+    if ":" in str(directory) or any(ord(c) < 32 for c in str(directory)):
+        raise ValueError("Python PATH directory contains a colon or control character")
+    result = subprocess.run([executable, "-c", "import sys, tomllib; sys.exit(not (sys.version_info.major == 3 and sys.version_info >= (3, 11)))"],
+                            stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                            timeout=15, check=False)
+    if result.returncode:
+        raise ValueError("current python3 is not compatible; no persistent selection prepared")
+    print(f"Fresh-shell Python check failed. Proposed Python directory: {directory}\n"
+          "This prepends that directory for future selected-shell sessions and can change which Python "
+          "and other commands are selected outside Byte. It cannot repair unrelated startup-file errors.\n"
+          "The exact session script and profile target will be shown before separate plan approval.")
+    if yes_no("Make this Python available in future terminals through the reviewed session script?"):
+        return directory, True
+    print("Python PATH was not selected. Future terminals may require manual configuration.")
+    return None, True
+
+
+def session_script(release: Path, helpers: Path | None, python_directory: Path | None = None) -> str:
     directory = str(release / "bin")
     if ":" in directory or any(ord(char) < 32 for char in directory):
         raise ValueError("shell PATH integration requires a bin path without colons or control characters")
     lines = ["# Deployment-owned Byte session entrypoint; review before sourcing."]
+    if python_directory is not None:
+        value = str(python_directory)
+        if not python_directory.is_absolute() or ":" in value or any(ord(c) < 32 for c in value):
+            raise ValueError("Python PATH directory must be absolute without colons or control characters")
+        lines.extend([
+            "# Prefer the reviewed Python directory; preserve other PATH entries and remove duplicates of this entry.",
+            "byte_setup_python=" + shlex.quote(value),
+            'byte_setup_rest=${PATH-}; byte_setup_path=$byte_setup_python',
+            'while :; do',
+            '  case "$byte_setup_rest" in *:*) byte_setup_part=${byte_setup_rest%%:*}; byte_setup_rest=${byte_setup_rest#*:}; byte_setup_more=yes ;;',
+            '    *) byte_setup_part=$byte_setup_rest; byte_setup_more=no ;; esac',
+            '  if [ "$byte_setup_part" != "$byte_setup_python" ]; then byte_setup_path=$byte_setup_path:$byte_setup_part; fi',
+            '  [ "$byte_setup_more" = yes ] || break',
+            'done',
+            'export PATH="$byte_setup_path"',
+            'unset byte_setup_python byte_setup_rest byte_setup_path byte_setup_part byte_setup_more',
+        ])
     if helpers is not None:
         lines.append("export BYTE_CORE_HELPERS_CONFIG=" + shlex.quote(str(helpers)))
     quoted = shlex.quote(directory)
@@ -465,7 +537,8 @@ def finish_setup(install_plan: str, cli, *, plan_only=False, deployment=None, st
         wrapper = outside_installation(Path(prompt_path("New permanent session script", Path.home() / ".byte-session.sh")))
         if wrapper == helpers:
             raise ValueError("helper settings and session script must use different files")
-        content = session_script(release, helpers)
+        python_directory, check_python = python_path_choice(shell, home, plan_only=plan_only)
+        content = session_script(release, helpers, python_directory)
         print(f"\nSession script to save at {wrapper}:\n{content}\n"
               "Its profile plan will bind this file. The installed shell assets remain covered by\n"
               "installation verification; this custom entrypoint does not recursively bind imports.")
@@ -479,7 +552,10 @@ def finish_setup(install_plan: str, cli, *, plan_only=False, deployment=None, st
             print("Shell configuration stopped. Keep the session script, plans, and profile backups for review.")
             return status
         if not plan_only:
-            print(f"Profile verified. Open a new {shell} terminal, then run: command -v byte; byte check; bytehelp\n"
+            if check_python and not fresh_python_check(shell, home):
+                print("Profile bytes verified, but fresh-shell Python readiness failed. Keep the profile backup and plans; no rollback attempted. Check startup errors and login-shell configuration.")
+                return 3
+            print(f"Profile verified. Open a new {shell} terminal, then run: command -v python3; python3 --version; command -v byte; byte check; bytehelp\n"
                   "The running parent shell is unchanged. Existing aliases/functions named byte may take precedence.\n"
                   "Profile backups are retained in the selected home's .byte-backups directory.")
     if deployment is not None:
@@ -621,7 +697,7 @@ def main(argv=None) -> int:
     args = parser.parse_args(argv)
     if sys.version_info[0] != 3 or sys.version_info[:2] < (3, 11):
         print("Setup requires Python 3.11 or later in the Python 3 series. "
-              "Select a compatible interpreter; no packages were installed.", file=sys.stderr)
+              "Select a compatible interpreter or run sh scripts/setup_byte_core.sh for optional prerequisite installation; no packages were installed.", file=sys.stderr)
         return 3
     if args.skip_init and args.deployment_root is not None:
         parser.error("--skip-init cannot be combined with --deployment-root")

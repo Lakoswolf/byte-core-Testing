@@ -4,7 +4,9 @@ The experimental `byte setup` workflow turns an explicitly prepared standalone h
 
 `byte check --feature setup` checks the current POSIX secure file I/O backend. The settings-specific readiness checks below remain separate: they validate only explicitly configured choices, without a blanket Git or operating-system requirement.
 
-The source-checkout wizard `python3 scripts/setup_byte_core.py` can now collect basic helper choices after installation, or use `--finish-setup INSTALL_PLAN` against a verified installation. It composes this exact-plan workflow and the separate shell-profile workflow, with an explicitly reviewed deployment-owned session script to persist settings selection. See the [first-session guide](getting-started.md#permanent-locations-and-finishing-setup). The `byte setup` command itself retains the boundary described below.
+For initial Python/Git prerequisites, use the optional [shell bootstrap](getting-started.md#experimental-installation-script-source-checkout-only), `sh scripts/setup_byte_core.sh`. This is separate from helper-specific readiness and never installs optional helper tools.
+
+The source-checkout wizard `python3 scripts/setup_byte_core.py` can now collect basic helper choices after installation, or use `--finish-setup INSTALL_PLAN` against a verified installation. It composes this exact-plan workflow and the separate shell-profile workflow, with an explicitly reviewed deployment-owned session script to persist settings selection and, when needed and approved, the Python PATH directory. Startup-file execution for fresh-shell checks requires separate permission; actual new-terminal confirmation remains manual. See the [first-session guide](getting-started.md#permanent-locations-and-finishing-setup). The `byte setup` command itself retains the boundary described below.
 
 ## Prepare the choices
 

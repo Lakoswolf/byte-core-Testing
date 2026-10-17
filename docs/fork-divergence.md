@@ -24,6 +24,7 @@ This is a manually maintained workflow supported by repository instructions. It 
 | [FORK-001](#fork-001-guided-local-candidate-setup) | Guided local candidate setup | Implemented; included in fork PR #3 | Unverified |
 | [FORK-002](#fork-002-launcher-prerequisite-checks) | Launcher prerequisite checks | Implemented; included in fork PR #3 | Unverified |
 | [FORK-003](#fork-003-divergence-tracking-guidance) | Divergence tracking guidance | Implemented; committed | Unverified |
+| [FORK-005](#fork-005-optional-prerequisite-bootstrap) | Optional prerequisite bootstrap | Implemented; published through fork PR #3 | Unverified |
 | [FORK-004](#fork-004-governance-basis-traceability) | Governance-basis traceability | Implemented; committed | Unverified |
 
 ## FORK-001: Guided local candidate setup
@@ -98,3 +99,21 @@ the audit-record shape independently.
 **Limits and adoption:** Coverage starts at the stated baseline; upstream disposition must be checked rather than assumed. Upstream can adopt the code proposals without adopting fork bookkeeping. Backout removes this log and its guidance references together.
 
 **References:** Implementation commit: `4b750981ca7b2c8ad2b41f15a8252a58d776aa23`. Upstream issue/PR references pending.
+
+## FORK-005: Optional prerequisite bootstrap
+
+**Problem:** The Python wizard cannot start when Python is missing, and source downloads require Git.
+
+**Implemented:** `sh scripts/setup_byte_core.sh` checks Python 3.11+/tomllib and download-related Git, offers fixed package commands through Linux APT or existing macOS Homebrew, requires interactive affirmative approval, and rechecks readiness before forwarding arguments to the wizard. Preview/help and noninteractive missing-prerequisite runs refuse installation. APT forbids removals; Homebrew automatic update/cleanup are disabled. Runtime PATH selection is process-local.
+
+**Affected paths:** `scripts/setup_byte_core.sh`, `scripts/setup_byte_core.py`, `tests/test_setup_bootstrap.py`, `tests/test_setup_python_path.py`, `tests/test_setup_finish.py`, README, first-session and installation guides, helper setup guide, and candidate notes.
+
+**Validation and limits:** Mocked package-manager tests cover handoff, refusal, cancellation, Git-only installation, Homebrew runtime installation, command failure, and failed post-install readiness. No real package manager is executed by these tests. Live APT/Homebrew and fresh-user validation remain unavailable. Package changes and dependencies survive later failures; there is no automatic rollback. No package-manager installation, repository addition, or optional helper dependency installation is provided. Optional finish-setup now offers permission-gated fresh-shell checks and a separately reviewed persistent Python PATH entry; actual terminal-window validation remains manual. Verification passed: 434-test full-suite run, followed by the expanded nine-test bootstrap suite, POSIX shell syntax, whitespace checks, and changed-public-file and 73-file candidate privacy scans. The two final bootstrap cases were run in the focused suite after full-suite discovery.
+
+**Adoption/backout:** The source wrapper is independent of the Core lifecycle engine. Removing it requires updating its tests and linked documentation; installed packages and deployment files remain operator-owned. Published through fork PR #3; upstream disposition remains unverified.
+
+**FORK-005 persistent PATH refinement:** The bootstrap preserves its incoming PATH for bounded fresh-shell checks. Optional shell setup asks before executing startup files, skips execution in preview mode, offers the compatible current Python directory when readiness fails, and includes its quoted, deduplicated PATH selection in the session script under existing exact-plan profile approval. Post-apply checks distinguish profile-byte verification from Python readiness. No login-profile migration or automatic rollback is performed. Mocked choices and fictional shell/profile tests cover permission, preview, selection, quoting, deduplication, and startup readiness; live new-terminal confirmation remains unavailable.
+
+**PATH refinement verification:** The 443-test full-suite run and final 77-test setup-focused run passed, including the final post-apply failure preservation case added to discovery after the full run started. POSIX launcher syntax, whitespace, changed-file privacy, and 73-file candidate privacy checks passed. No personal profiles or package installations were changed during validation.
+
+**Publication verification (2026-10-17):** All 444 tests passed, along with POSIX bootstrap syntax, whitespace validation, and a privacy scan of the 12 changed public files (zero findings). Tests use fictional inputs and fake package managers; native package installation and new-terminal acceptance remain unverified.

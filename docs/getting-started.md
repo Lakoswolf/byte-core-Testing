@@ -149,7 +149,19 @@ Expect `Result: verified`. Read the files described above in your text editor. T
 
 ## Experimental installation script (source checkout only)
 
-For guided installation from a reviewed source checkout, run:
+For setup with optional prerequisite installation, run the source-only shell launcher:
+
+```sh
+sh scripts/setup_byte_core.sh
+```
+
+It checks Python 3.11+ with `tomllib`, plus Git only when source download is selected. If something is missing, an interactive yes/no prompt shows the proposed package commands before execution. Linux with APT uses `sudo apt-get update` and `sudo apt-get --no-remove install` for `python3` and/or `git`; macOS with existing Homebrew uses `brew install` for `python@3.13` and/or `git`, with automatic update and cleanup disabled. APT retains its own package confirmation. Dependencies may be installed or upgraded, and downloads use the machine's configured package sources. No package repositories or package managers are added. Older distribution Python packages may remain insufficient; the final runtime check then stops setup with manual guidance.
+
+Keep `setup_byte_core.sh` beside `setup_byte_core.py`. All wizard arguments are forwarded, including `--from-repo`. `--plan-only`, `--help`, and noninteractive input never authorize package installation: if prerequisites are missing, the launcher stops. Unknown platforms or absent package managers require manual installation. Run as a normal user, not through sudo; only APT commands elevate. After installation the launcher checks prerequisites again before starting Python. Package changes remain if later setup fails or is cancelled; there is no automatic uninstall or rollback. Consult package-manager history before any separately reviewed recovery.
+
+When it installs Python, the launcher selects that runtime on PATH for this process and its children only. The separately approved shell-setup flow below can persist that selection in the deployment-owned session script. Until that step is approved and verified, future terminals still need a compatible `python3` on PATH. This bootstrap installs only initial Python/Git prerequisites, not optional shells, Nmap, assistant applications, or other helper dependencies. Package installation is not a Byte exact-plan operation and does not establish native release acceptance. Automated tests use fake package managers; live APT/Homebrew installation has not been validated.
+
+For guided installation when prerequisites are already available, run:
 
 ```sh
 python3 scripts/setup_byte_core.py
@@ -246,6 +258,10 @@ The optional flow asks:
 1. **Helper settings:** choose an existing TOML file, or create one with yes/no choices for prompt, prefix-history search, convenience aliases, and a development-directory shortcut. Assistant launching is optional and requires an explicit executable plus literal new/resume argument arrays. Network targets, repositories, highlighters, and other advanced settings remain explicit TOML customization; none are inferred or contacted.
 2. **Review the helper plan:** new settings default to `~/.byte-helpers.toml`, displayed as an absolute path, and must use an absent file with an existing parent. The script saves prepared TOML and a private exact plan. Full plan-ID approval creates the settings through `byte setup apply`, followed by verification. Existing files are checked and left unchanged.
 3. **Shell integration:** choose Bash or Zsh, the existing home directory whose `.bashrc` or `.zshrc` may change, and a new permanent session-script path (proposed as `~/.byte-session.sh`). The selected shell must already be installed. The script displays the complete generated entrypoint before asking to save it.
+   Before saving the session script, the wizard offers fresh-shell Python checks. These execute the selected startup files and require explicit permission; preview-only runs skip them. Bash checks a new interactive non-login shell with the selected `.bashrc`; Zsh checks an interactive shell with `ZDOTDIR` set to the selected home. The baseline PATH is the shell launcher's incoming PATH (passed internally as `BYTE_SETUP_ORIGINAL_PATH`), or the Python wizard's current PATH when launched directly. This is a bounded rehearsal, not a reconstruction of every terminal application's environment.
+
+   If the check fails and the current `python3` is compatible, the wizard displays its directory and offers to prepend it persistently. This affects Python and potentially other commands outside Byte. The generated script removes duplicate occurrences of that directory while preserving other PATH entries. A failed check may also reflect startup-file errors; the wizard does not repair those. Declining leaves manual configuration available. The complete entrypoint is shown before saving, and the profile still requires its separate exact-plan approval.
+
 4. **Review the profile plan:** the session script selects the helper file, adds the installed `bin` directory to `PATH` without repeated duplication, and sources the installed generic shell asset. The existing shell planner binds this entrypoint, backs up the original profile, preserves its content/mode, and requires separate full plan-ID approval before modification. Existing managed blocks are refused rather than replaced. Keep the generated session script available; editing it invalidates its shell plan.
 5. **Starter documents:** the wizard explains each document's purpose and can open the new notebook in an explicitly named editor. It passes the notebook as one argument without shell evaluation. It does not populate deployment facts or launch an assistant automatically.
 
@@ -254,6 +270,8 @@ Choose new settings and session-script paths outside Core and installation state
 `--finish-setup INSTALL_PLAN --plan-only` prepares the optional helper/profile plans without publishing helper settings or modifying profiles. It does create the reviewed new session script and private preparation files so the shell planner can bind the source. Apply and verify a prepared helper plan before its profile plan. This is separate from initial-installation `--plan-only`, which stops after the install/init plans; no installation exists yet for optional configuration.
 
 Each step is independent: cancelling or failing shell integration leaves an already installed Core and completed helper settings intact. Retain the exact plans, source files, and `.byte-backups` files for recovery. Shell removal requires its separate reviewed removal plan; it does not remove helper settings, the session script, Core, or deployment documents. The wizard performs no automatic removal or rollback of earlier completed stages.
+
+After profile verification, an approved fresh-shell check is repeated. A failure returns status `3` and preserves the profile, session script, plans, and backup for investigation; profile-byte verification alone is not runtime success. Open a genuinely new selected-shell terminal and confirm `command -v python3`, `python3 --version`, and the commands below. Bash login terminals must already arrange to load `.bashrc`; this workflow does not edit `.bash_profile` or `.profile`. Terminal-specific startup and actual new-window confirmation remain manual.
 
 After profile verification, open a new selected-shell terminal and run:
 
