@@ -1,6 +1,6 @@
 #!/bin/sh
 
-script_dir=$(CDPATH= cd -P "$(dirname "$0")" >/dev/null 2>&1 && pwd) || {
+script_dir=$(CDPATH='' cd -P "$(dirname "$0")" >/dev/null 2>&1 && pwd) || {
     echo "byte: internal error" >&2
     exit 70
 }
@@ -9,4 +9,14 @@ PYTHONPATH="${script_dir}/../src${PYTHONPATH:+:${PYTHONPATH}}"
 PYTHONDONTWRITEBYTECODE=1
 export PYTHONPATH
 export PYTHONDONTWRITEBYTECODE
+
+if ! command -v python3 >/dev/null 2>&1; then
+    echo "byte: Python 3.11 through 3.14 is required" >&2
+    exit 3
+fi
+if ! python3 -c 'import sys; raise SystemExit(0 if (3, 11) <= sys.version_info[:2] <= (3, 14) else 1)' \
+    >/dev/null 2>&1; then
+    echo "byte: Python 3.11 through 3.14 is required" >&2
+    exit 3
+fi
 exec python3 -m byte_core.cli "$@"
