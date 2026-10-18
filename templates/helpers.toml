@@ -1,0 +1,51 @@
+# Experimental helper configuration. Copy to a deployment-owned location.
+# Select its absolute path with BYTE_CORE_HELPERS_CONFIG or helpers --config.
+# This file configures nothing on your network and launches no applications.
+schema_version = 1
+
+[shell]
+prompt = false
+prompt_label = "Byte"
+prompt_color = "none"
+prompt_directory = true
+prompt_git = true
+history = false
+highlighting = false
+aliases = false
+# development_directory = "/srv/example/development"
+# highlighting_file = "/srv/example/optional-highlighter.zsh"
+# Optional zsh-syntax-highlighting styles; otherwise preserve plugin styles.
+# highlighting_command_style = "fg=green"
+# highlighting_unknown_style = "fg=red,bold"
+# highlighting_path_style = "fg=cyan,underline"
+
+[network]
+ping_timeout = 2
+workers = 4
+relay_timeout = 10
+
+# Configure an assistant executable and its distinct session argument lists.
+# {project} is replaced with the current Git project's absolute root.
+# Arguments are literal data; there is no shell expansion.
+# [assistant]
+# executable = "example-assistant"
+# new_args = ["--project", "{project}"]
+# resume_args = ["--resume", "--project", "{project}"]
+
+# Every repository is an explicit selection, never a discovered sibling.
+# [[repositories]]
+# name = "example-project"
+# path = "/srv/example/development/project"
+# remote = "origin"
+# branch = "main"
+
+# Reserved documentation addresses below are fictional, not real targets.
+# [[devices]]
+# name = "example-device"
+# addresses = ["192.0.2.10"]
+# mac = "02:00:00:00:00:01"
+# broadcast = "192.0.2.255"
+# port = 9
+# Optional relay uses a deployment-provided remote sender, with literal args.
+# relay_host = "relay.example.invalid"
+# relay_command = ["/srv/example/bin/wake-device", "example-device"]

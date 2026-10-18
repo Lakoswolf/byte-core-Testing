@@ -16,14 +16,9 @@ from byte_core.installation import (  # noqa: E402
     load_release_descriptor,
 )
 from byte_core.privacy.adapters import scan_artifact_directory  # noqa: E402
+from byte_core.platform_support import RELEASE_TARGETS  # noqa: E402
 
-EXPECTED_TARGETS = frozenset(
-    {
-        ("ubuntu-24.04", "x86_64"),
-        ("macos-15", "arm64"),
-        ("macos-26", "arm64"),
-    }
-)
+EXPECTED_TARGETS = RELEASE_TARGETS
 COMMIT = re.compile(r"[0-9a-f]{40}")
 
 

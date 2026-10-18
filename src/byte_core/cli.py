@@ -14,6 +14,8 @@ from dataclasses import asdict, dataclass
 from enum import IntEnum
 from typing import Sequence, TextIO
 
+from . import helpers_cli, inventory_cli, setup_cli
+from .platform_support import SUPPORTED_HOSTS, host_release
 from .care import (
     CareError,
     build_diagnostic_report,
@@ -101,15 +103,6 @@ class UpdateCheckResult:
     action_count: int
 
 
-SUPPORTED_HOSTS = frozenset(
-    {
-        ("linux", "x86_64", "ubuntu/24.04"),
-        ("macos", "arm64", "macos/15"),
-        ("macos", "arm64", "macos/26"),
-    }
-)
-
-
 class _ArgumentParser(argparse.ArgumentParser):
     def error(self, message: str) -> None:
         self.print_usage(sys.stderr)
@@ -122,6 +115,9 @@ def build_parser() -> argparse.ArgumentParser:
         description="Safely inspect and manage a self-managed Byte deployment.",
     )
     commands = parser.add_subparsers(dest="command", required=True)
+    inventory_cli.add_parser(commands)
+    helpers_cli.add_parser(commands)
+    setup_cli.add_parser(commands)
 
     check = commands.add_parser(
         "check",
@@ -301,20 +297,7 @@ def _normalize_machine(value: str) -> str:
 
 
 def _host_release(system: str) -> str:
-    if system == "Darwin":
-        version = _safe_identifier(platform.mac_ver()[0].partition(".")[0])
-        return "unknown" if version == "unknown" else f"macos/{version}"
-    if system == "Linux":
-        try:
-            release = platform.freedesktop_os_release()
-        except OSError:
-            return "unknown"
-        identifier = _safe_identifier(release.get("ID", ""))
-        version = _safe_identifier(release.get("VERSION_ID", ""))
-        if identifier == "unknown" or version == "unknown":
-            return "unknown"
-        return f"{identifier}/{version}"
-    return "unknown"
+    return host_release(system)
 
 
 def main(
@@ -332,6 +315,12 @@ def main(
 
     try:
         arguments = parser.parse_args(argv)
+        if arguments.command == "inventory":
+            return inventory_cli.run(arguments, output, errors, collect_check_report)
+        if arguments.command == "helpers":
+            return helpers_cli.run(arguments, output, errors, collect_check_report)
+        if arguments.command == "setup":
+            return setup_cli.run(arguments, output, errors)
         if arguments.command == "plan":
             if arguments.operation == "init":
                 active_plan = build_initialization_plan(arguments.deployment_root)

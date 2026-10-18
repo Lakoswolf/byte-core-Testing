@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE nmaprun>
+<nmaprun scanner="nmap">
+  <host><status state="up" reason="conn-refused"/>
+    <address addr="192.0.2.10" addrtype="ipv4"/>
+  </host>
+  <host><status state="up" reason="syn-ack"/>
+    <address addr="192.0.2.20" addrtype="ipv4"/>
+  </host>
+  <runstats><finished exit="success"/></runstats>
+</nmaprun>

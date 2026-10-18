@@ -93,6 +93,28 @@ class CodexIntegrationTests(unittest.TestCase):
         self.assertEqual(before, after)
         self.assertEqual(json.loads(completed.stdout)["continue"], True)
 
+    def test_wrong_json_types_and_nested_input_always_fall_back(self) -> None:
+        hook = _load_hook()
+        inputs = [json.dumps({"hook_event_name": "SessionStart", "source": value})
+                  for value in ([], {}, None, True, 1, 1.5, ["startup"], {"value": "startup"})]
+        inputs += [json.dumps(value) for value in (None, [], "startup", True, 7)]
+        inputs += ['{"hook_event_name": [], "source": "startup"}', "[" * 2000 + "]" * 2000]
+        for source in inputs:
+            with self.subTest(source=source[:60]):
+                output = io.StringIO()
+                self.assertEqual(hook.run(io.StringIO(source), output), 0)
+                self.assertEqual(json.loads(output.getvalue()), {"continue": True, "systemMessage": hook.FALLBACK})
+
+    def test_input_io_errors_fall_back_without_echoing_details(self) -> None:
+        hook = _load_hook()
+        class BrokenInput:
+            def read(self, size):
+                raise OSError("fictional-input-detail")
+        output = io.StringIO()
+        self.assertEqual(hook.run(BrokenInput(), output), 0)
+        self.assertNotIn("fictional-input-detail", output.getvalue())
+        self.assertEqual(json.loads(output.getvalue())["systemMessage"], hook.FALLBACK)
+
     def test_agents_guidance_names_public_safety_and_validation(self) -> None:
         guidance = (REPOSITORY_ROOT / "AGENTS.md").read_text(encoding="utf-8")
         self.assertIn("public repository", guidance)

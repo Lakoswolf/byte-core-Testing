@@ -63,6 +63,33 @@ class PrivacyFileAdapterTests(unittest.TestCase):
         self.assertNotIn(str(self.root), repr(finding))
         self.assertNotIn(value, repr(finding))
 
+    def test_container_build_files_are_scanned_without_mutation(self) -> None:
+        paths = (".devcontainer/Dockerfile", ".devcontainer/.dockerignore")
+        self._write(paths[0], "FROM ubuntu:24.04\n")
+        self._write(paths[1], "*\n!Dockerfile\n")
+        before = self._hashes()
+
+        result = self._scan(paths)
+
+        self.assertTrue(result.passed)
+        self.assertEqual({scan.source_id for scan in result.scans}, set(paths))
+        self.assertEqual(before, self._hashes())
+
+    def test_container_filenames_do_not_bypass_content_checks(self) -> None:
+        value = "password=" + "synthetic-container-value"
+        for name in ("Dockerfile", ".dockerignore"):
+            with self.subTest(name=name):
+                self._write(name, value)
+                result = self._scan((name,))
+                self.assertFalse(result.passed)
+                self.assertFalse(result.errors)
+                self.assertTrue(result.scans[0].findings)
+                self.assertNotIn(value, repr(result))
+
+                self._write_bytes(name, b"safe\0binary")
+                binary = self._scan((name,))
+                self.assertEqual(self._codes(binary), {"binary_file"})
+
     def test_non_public_ownership_is_rejected_before_root_access(self) -> None:
         missing = self.root / "does-not-exist"
 

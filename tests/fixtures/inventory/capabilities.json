@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "devices": [
+    {
+      "manufacturer": "Example Devices",
+      "model": "Sample Printer 1",
+      "capabilities": [
+        {
+          "name": "Two-sided printing",
+          "source_url": "https://devices.example.test/sample-printer-1"
+        }
+      ]
+    }
+  ]
+}

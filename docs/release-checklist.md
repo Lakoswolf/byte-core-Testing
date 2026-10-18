@@ -2,9 +2,11 @@
 
 Byte Core 0.1.0 remains blocked until every automated check and every supported-platform manual record passes. This checklist is repeatable; it does not authorize a tag by itself.
 
+The checker and ledger cover Ubuntu 24.04 x86_64, Kubuntu 26.04 x86_64, macOS 15 arm64, and macOS 26 arm64 plus the independent review. All five entries remain pending. [Issue #36](https://github.com/kodiakdirus/byte-core/issues/36) requires native Kubuntu lifecycle evidence; implemented detection and fixture coverage do not complete that record. Runtime and release checks share one exact platform-target set, and a plain Ubuntu 26.04 record cannot substitute for Kubuntu.
+
 ## Candidate construction
 
-From a clean, reviewed `main` commit:
+Run the build and gate commands from a clean, reviewed source checkout of `main`. The candidate archive includes these public docs, but excludes the repository's `scripts/`, `tests/`, and `release/` evidence material; retain the source checkout for these steps.
 
 ```text
 python3 scripts/build_release_artifact.py --version 0.1.0 --output /absolute/new/byte-core-0.1.0
@@ -18,12 +20,14 @@ The second command validates descriptor integrity, scans the complete artifact f
 
 The final release command adds `--require-complete` and must remain blocked until every platform record and the independent fresh-user review pass.
 
+The checker validates ledger structure, required record headings, descriptor integrity, and artifact privacy. It does not authenticate observations, prove reviewer independence, fetch CI conclusions, or establish that every evidence record applies to the exact candidate being tagged. Those remain explicit release-review responsibilities.
+
 ## Automated gate
 
 - Full unit suite passes on every configured operating-system/Python combination.
-- Bash launcher smoke tests pass on all targets; native Zsh smoke tests pass on macOS.
+- Bash launcher smoke tests pass on the configured Ubuntu/macOS runners; native Zsh smoke tests pass on macOS. Kubuntu detection and refusal fixtures pass on existing runners; no native Kubuntu hosted runner is configured.
 - Canonical document validation and invalid/future schema refusal tests pass.
-- Install, update, removal, shell, diagnostics, reviewed-report, offline, privacy, and interruption tests pass.
+- Install, update, removal, guided setup, shell mode/source verification, workspace-path validation, malformed hook input, diagnostics, reviewed-report, offline, privacy, and interruption tests pass.
 - Candidate descriptor and every managed file digest verify.
 - Complete candidate privacy scan passes with no adapter error or active finding.
 - `git diff --check` passes and the candidate is built from a clean reviewed commit.
@@ -32,7 +36,7 @@ CI configuration is not evidence by itself. Record the URLs and conclusions of p
 
 ## Manual platform record
 
-Follow the exact [deployment-candidate testing guide](deployment-testing.md). Copy the matching template from [`release/v0.1/evidence/`](../release/v0.1/evidence/) for each supported target. Use only fresh fictional deployment data. Include the tested commit and candidate archive SHA-256, then record:
+Follow the exact [deployment-candidate testing guide](deployment-testing.md). In the source checkout, copy the matching template from `release/v0.1/evidence/` for each of the four supported targets. Use only fresh fictional deployment data. Native Kubuntu observations must establish the documented flavor identity and remain distinct from fixture, container, virtual-machine, or emulated rehearsals. Include the tested commit and candidate archive SHA-256, then record:
 
 ```text
 # TARGET manual evidence
@@ -60,7 +64,7 @@ Change that target’s ledger status to `passed` only after the record is review
 
 ## Fresh-user review
 
-A reviewer who did not implement the feature follows the README and public docs without private assistance and completes the [fresh-user review template](../release/v0.1/evidence/fresh-user-review-template.md). Record unclear, missing, or assumed steps as release blockers and fix them before repeating the review. The `fresh_user_review` ledger entry remains `pending` until that record is reviewed.
+A reviewer who did not implement the feature follows the README and public docs without private assistance and completes `release/v0.1/evidence/fresh-user-review-template.md` in the source checkout. Record unclear, missing, or assumed steps as release blockers and fix them before repeating the review. The `fresh_user_review` ledger entry remains `pending` until that record is reviewed. Its evidence object also requires `reviewer_role` with the exact value `independent reviewer`, in addition to `completed_on`, `commit_sha`, and `record`.
 
 ## Final tag gate
 

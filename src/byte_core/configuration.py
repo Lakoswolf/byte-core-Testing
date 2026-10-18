@@ -8,7 +8,7 @@ from __future__ import annotations
 import copy
 import tomllib
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any, Sequence
 
 SUPPORTED_SCHEMA_VERSIONS = frozenset({1})
@@ -111,6 +111,8 @@ def resolve_configuration(
             )
 
         _validate_table(document, _SCHEMA, layer.name)
+        if "workspace" in document.get("paths", {}):
+            _validate_workspace(document["paths"]["workspace"], layer=layer.name)
         _merge_table(resolved, document, sources, layer.name)
 
     if expected_version is None:
@@ -121,6 +123,50 @@ def resolve_configuration(
         values=resolved,
         sources=sources,
     )
+
+
+def _validate_workspace(value: str, *, layer: str | None = None) -> None:
+    if (not isinstance(value, str) or not value or len(value) > 4096
+            or any(ord(char) < 32 or ord(char) == 127 for char in value)
+            or any(char in value for char in ("\\", "$", "`", "%"))
+            or any(part in {"", ".", ".."} or part.startswith("~") for part in value.split("/"))
+            or PurePosixPath(value).is_absolute() or PureWindowsPath(value).drive):
+        raise ConfigurationError("invalid_workspace_path", layer=layer, key="paths.workspace")
+    try:
+        value.encode("utf-8")
+    except UnicodeError:
+        raise ConfigurationError("invalid_workspace_path", layer=layer, key="paths.workspace") from None
+
+
+def resolve_workspace_path(
+    configuration: ResolvedConfiguration,
+    deployment_root: str | Path,
+) -> Path:
+    """Resolve an explicit workspace under an existing deployment root without mutation.
+
+    This is a point-in-time check, not a directory handle or permission to mutate.
+    Operational callers must revalidate targets at their own mutation boundary.
+    """
+    workspace = configuration.values.get("paths", {}).get("workspace")
+    _validate_workspace(workspace)
+    try:
+        root = Path(deployment_root)
+        if (not root.is_absolute() or ".." in root.parts
+                or any(part.is_symlink() for part in (root, *root.parents))
+                or not root.is_dir()):
+            raise ConfigurationError("invalid_deployment_root")
+        root = root.resolve(strict=True)
+        target = root
+        for part in workspace.split("/"):
+            target = target / part
+            if target.is_symlink() or (target.exists() and not target.is_dir()):
+                raise ConfigurationError("invalid_workspace_target", key="paths.workspace")
+        resolved = target.resolve(strict=False)
+        if resolved == root or root not in resolved.parents:
+            raise ConfigurationError("invalid_workspace_target", key="paths.workspace")
+        return resolved
+    except (OSError, ValueError, RuntimeError):
+        raise ConfigurationError("invalid_workspace_target", key="paths.workspace") from None
 
 
 def _order_layers(layers: Sequence[Layer]) -> list[Layer]:

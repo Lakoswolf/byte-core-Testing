@@ -23,6 +23,9 @@ FIXED_FILES = (
     "SECURITY.md",
     "bin/byte",
     "shell/byte-shell.sh",
+    "shell/byte-shell-bash.sh",
+    "shell/byte-shell-zsh.zsh",
+    "templates/helpers.toml",
 )
 SOURCE_DIRECTORIES = (
     ".codex",

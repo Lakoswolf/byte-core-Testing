@@ -2,15 +2,20 @@
 
 This guide is the public handoff for manual supported-platform testing. It uses a fresh checkout, a deterministic candidate artifact, disposable fictional roots, and exact plans. It does not install Byte into operating-system directories, require elevated privileges, or claim that 0.1.0 has been released.
 
+If this is your first encounter with Byte, begin with [Your first session with Byte](getting-started.md). It explains the project, provides a Codex-guided introduction, and walks through a small example before this full acceptance test. Start this test with a fresh disposable root after completing that introduction.
+
 Use only a disposable test environment. Do not substitute real deployment configuration, inventory, credentials, logs, or documentation.
 
 ## Supported test targets
 
 - Ubuntu 24.04 LTS on `x86_64`, using Bash
+- Kubuntu 26.04 LTS on `x86_64`, using Bash
 - macOS 15 on Apple silicon (`arm64`), using Zsh
 - macOS 26 on Apple silicon (`arm64`), using Zsh
 
 Python 3.11 through 3.14 and Git must be available. Optional Zsh syntax highlighting is not part of this smoke test and is never installed by Byte.
+
+These are the implemented release targets, with all native acceptance records still pending. Kubuntu requires the [documented flavor evidence](support-matrix.md#kubuntu-2604-identification-and-remaining-evidence); plain Ubuntu 26.04, KDE session labels, and fixture-only detection tests do not substitute. No native Kubuntu CI runner is configured. Keep the source checkout for build scripts and evidence templates, which are not included in the candidate archive.
 
 ## 1. Prepare a reviewed checkout
 
@@ -44,7 +49,7 @@ python3 scripts/package_release_candidate.py \
   --output "$BYTE_TEST_ROOT/byte-core-0.1.0.tar.gz"
 ```
 
-Record the archive SHA-256 printed by the packager. On Ubuntu, independently verify it with `sha256sum`. On macOS, use `shasum -a 256`.
+Record the archive SHA-256 printed by the packager. On Ubuntu or Kubuntu, independently verify it with `sha256sum`. On macOS, use `shasum -a 256`.
 
 Extract the archive into a new directory and use the extracted copy for every remaining step:
 
@@ -101,7 +106,7 @@ mkdir "$BYTE_TEST_ROOT/test-home"
 BYTE_TEST_SHELL=zsh
 ```
 
-Use `BYTE_TEST_SHELL=bash` for the Ubuntu target. Then run:
+Use `BYTE_TEST_SHELL=bash` for the Ubuntu and Kubuntu targets. Then run:
 
 ```text
 "$BYTE_CANDIDATE/bin/byte" shell plan \
@@ -123,7 +128,9 @@ Use `BYTE_TEST_SHELL=bash` for the Ubuntu target. Then run:
   --plan "$BYTE_TEST_ROOT/shell-remove-plan.json"
 ```
 
-Confirm the profile is absent again when Byte created it. If testing an existing fictional profile, confirm unrelated content is byte-for-byte unchanged.
+Review the version-2 install plan's profile mode and selected source-file digests/modes before applying it. Confirm the profile is absent again when Byte created it. If testing an existing fictional profile, confirm unrelated content and its mode are unchanged. The source snapshot covers the explicit entrypoint, optional highlighter, and selected packaged native asset; it does not recursively cover arbitrary imports or prevent changes after verification. Keep the candidate source files unchanged during this test.
+
+For optional helper-configuration acceptance, follow [Guided helper setup](setup.md) with newly prepared fictional settings and a separate absent destination under the disposable test root. Record prerequisite checks, exact-plan approval, mode-`0600` creation, verification, and preservation of existing files. Setup does not perform the shell profile steps above, execute applications, or contact devices. Retain or back out the new settings file according to the reviewed setup plan; later-edited files must be preserved.
 
 ## 6. Remove Core and prove preservation
 
@@ -146,7 +153,7 @@ The first removal must report `removed`, verification must report `verified`, an
 
 Repeat the candidate check, initialization plan/verify, install plan/verify, shell plan/verify, and removal plan/verify while network access is disabled by a method appropriate to the disposable test environment. Record the method and result. Do not change firewall or network policy on an operational host merely to perform this test.
 
-The GitHub Byte Care transport is the only intentionally network-using path and is excluded from offline success. Do not use `--github-submit`; its behavior is covered by mock-only automated tests.
+The GitHub Byte Care transport and explicit `inventory scan` path intentionally use the network and are excluded from this offline test. Do not use `--github-submit` or live scans here; scanner execution is covered with mocked results and bounded non-network child processes, and reporting uses mock-only tests. The optional [inventory walkthrough](inventory.md#offline-first-a-fictional-walkthrough) can exercise XML import, capability lookup, catalog publication, and verification offline using the source checkout's fictional fixtures.
 
 ## 8. Record evidence
 
@@ -163,4 +170,4 @@ python3 scripts/check_v01_release.py \
   --require-complete
 ```
 
-It must remain blocked until all three platform records and the independent review are present.
+It must remain blocked until all four platform records and the independent review are present and reviewed. The ordinary candidate gate currently reports five pending entries; fixture or container success does not change those statuses.
