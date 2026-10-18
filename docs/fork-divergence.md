@@ -117,3 +117,5 @@ the audit-record shape independently.
 **PATH refinement verification:** The 443-test full-suite run and final 77-test setup-focused run passed, including the final post-apply failure preservation case added to discovery after the full run started. POSIX launcher syntax, whitespace, changed-file privacy, and 73-file candidate privacy checks passed. No personal profiles or package installations were changed during validation.
 
 **Publication verification (2026-10-17):** All 444 tests passed, along with POSIX bootstrap syntax, whitespace validation, and a privacy scan of the 12 changed public files (zero findings). Tests use fictional inputs and fake package managers; native package installation and new-terminal acceptance remain unverified.
+
+**Merge-readiness follow-up (2026-10-18):** Retain the existing protected CI context names and macOS 15 automated unit/shell jobs while integrating the guided setup work. These jobs preserve required regression coverage; they do not establish native manual release acceptance or change the current evidence-target policy. No branch-protection requirement was removed or bypassed.
