@@ -55,10 +55,6 @@ def run(arguments, output, errors, readiness) -> int:
                 catalog_file=arguments.capabilities, previous_file=arguments.previous)
             output.write(encode(plan).decode())
             return 0
-        # Live scan alone depends on the host matrix and external Nmap.
-        # Import, review and verification remain available for offline work.
-        if action == "scan" and not readiness().supported:
-            raise InventoryError("inventory_host_unsupported")
         plan = read_json(arguments.plan)
         if action in {"scan", "import"}:
             value = discovery.scan(plan, arguments.approve,
@@ -83,7 +79,7 @@ def run(arguments, output, errors, readiness) -> int:
         return 0
     except InventoryError as error:
         errors.write(f"byte: {error.code}\n")
-        if error.code in {"inventory_host_unsupported", "nmap_unavailable"}:
+        if error.code in {"nmap_unavailable"}:
             return 3
         if error.code in {"inventory_not_approved", "inventory_target_exists",
                           "inventory_output_in_repository", "inventory_path_invalid",

@@ -39,4 +39,36 @@ Starter templates under `templates/canonical/` are Core-managed examples. The ex
 
 Operators update the manifest when declared current state changes, the runbook when an approved procedure changes, the audit log after a reviewed action and its validation, and the notebook when durable context does not yet change an authoritative source.
 
+For consequential work, an audit-log entry may include a governance basis: the
+guidance standard and version, canonical digest or blob when available,
+applicable addendum, controls applied, evidence classification, verification and
+validation basis, freshness state, outcome status, and known limitations. Use
+`verified`, `reported`, `inferred`, `assumed`, or `unknown` for evidence
+classification. Use `confirmed`, `changed`, or `not observable` for freshness,
+and do not claim a completed outcome when its status remains blocked or
+unverified. This is traceability metadata, not a request for Byte Core to
+retrieve or enforce an external standard. Missing governance metadata must not
+be replaced with an invented claim of compliance.
+
 Optional [guided inventory](inventory.md) produces separate deployment-owned JSON observations and reviewed device snapshots. These supplement the manifest; the backend never rewrites the four documents. The assistant may propose a reviewed manifest summary based on confirmed catalog entries. Schema-1 link rules remain unchanged, so reference a JSON filename as plain text rather than a Markdown link. New files or edited starter bytes intentionally invalidate the original initialization plan's exact verification; inventory has its own plan verification.
+
+## Optional investigation checkpoint
+
+For a longer investigation, the [troubleshooting guide](troubleshooting.md) recommends a short resumption note when useful. Place unresolved investigation under the notebook's existing `Notes` heading and reviewed actions under the audit log's existing `Entries` heading, only within authorized deployment-document work. No fifth canonical document, new marker, schema key, or automatic writer is introduced. Existing deployed files remain operator-owned; Core updates do not insert this structure.
+
+Use a compact entry such as:
+
+```text
+Objective and scope:
+Last checked state and when:
+Evidence: verified / reported / inferred / assumed / unknown
+Explanations rejected and why:
+Open question and next useful check:
+Actions taken and recovery state, if applicable:
+Verification result and objective still to demonstrate:
+Authorization still needed, if any:
+```
+
+Omit irrelevant fields. Keep only the minimum non-secret summary needed to continue; do not paste transcripts, raw logs, environment values, or broad command output. Real notes belong outside public repositories. Retain the distinction between an earlier observation and current state, and between a recorded decision and authorization for a new action. Corrections should identify which previous conclusion changed.
+
+This optional prose does not change schema-1 heading or link rules. Mention evidence identifiers as plain text when they cannot be linked under those rules. Editing a starter document still makes the original initialization plan's exact verification fail; that result alone is not evidence of damaged deployment data.

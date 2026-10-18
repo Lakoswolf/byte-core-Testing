@@ -315,14 +315,13 @@ class InventoryTests(unittest.TestCase):
         self.assertEqual(errors.getvalue(), "byte: inventory_target_exists\n")
         self.assertNotIn(str(self.root), errors.getvalue())
 
-    def test_live_cli_refuses_unsupported_host_before_scanner(self):
+    def test_live_cli_refuses_missing_prerequisites_before_scanner(self):
         saved = self.write("scan-plan.json", self.plan)
-        class Unsupported:
-            supported = False
-        with patch.object(cli, "collect_check_report", return_value=Unsupported()), \
+        report = cli.CheckReport("check", False, (cli.CheckResult("nmap", "fail", "unavailable"),), "inventory-scan")
+        with patch.object(cli, "collect_check_report", return_value=report), \
                 patch.object(discovery, "_run_nmap") as runner:
             code = cli.main(["inventory", "scan", "--plan", saved,
-                             "--approve", self.plan["id"]], stderr=io.StringIO())
+                             "--approve", self.plan["id"]], stdout=io.StringIO(), stderr=io.StringIO())
         self.assertEqual(code, 3)
         runner.assert_not_called()
 

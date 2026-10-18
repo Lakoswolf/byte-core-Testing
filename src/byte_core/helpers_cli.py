@@ -78,9 +78,6 @@ def run(arguments, output, errors, readiness=None) -> int:
                 result = helper_network.plan_wake(config, arguments.device)
         else:
             plan = read_json(arguments.plan)
-            if readiness is not None and not readiness().supported:
-                errors.write("byte: helper execution requires a supported host; offline planning remains available\n")
-                return 3
             if helper == "canisync":
                 result = helper_sync.apply(config, plan, arguments.approve)
             elif helper == "labstatus":

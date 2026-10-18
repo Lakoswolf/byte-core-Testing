@@ -1,5 +1,5 @@
 {
-  "name": "Byte Core — Ubuntu 24.04 testing",
+  "name": "Byte Core — Linux capability testing",
   "build": {
     "dockerfile": "Dockerfile",
     "context": ".",

@@ -58,6 +58,8 @@ GitHub's [automatic deletion of merged PR branches](https://docs.github.com/en/r
 
 ## Leave a clear handoff
 
+In this checkout, include the relevant [fork divergence entries](fork-divergence.md) when handing off an intentional local difference. Keep their implementation summaries and evidence current, add verified commit or PR references when available, and update upstream disposition only from reviewed evidence. This record supplements the exact diff and does not grant publication permission.
+
 Finish with the outcome, relevant PR or commit, checks actually completed, publication or merge state, remaining active work, and any recovery or manual follow-up. If something remains local, pending, or blocked, say so. Do not describe an uncommitted rule as already available to GitHub users or a passing automated check as completed manual testing.
 
 Reusable improvements belong in Core-owned guidance and, when needed, tested behavior with matching documentation. Express them as generic rules grounded in public requirements; do not reconstruct a conversation, import private operating knowledge, or depend on personal assistant memory. Repository identity, credentials, policies, and observed state remain owned by the user and must be resolved afresh for each task.

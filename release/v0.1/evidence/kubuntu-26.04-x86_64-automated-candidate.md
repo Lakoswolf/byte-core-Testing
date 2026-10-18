@@ -1,5 +1,7 @@
 # Kubuntu 26.04 x86_64 automated candidate observations
 
+This is a historical record for the implementation and candidate named below. References to Ubuntu and macOS 15 describe the target set at that time; those platforms are no longer required native acceptance targets. Runtime readiness now checks feature prerequisites independently of operating-system labels. The [current support matrix](../../../docs/support-matrix.md) and [evidence ledger](../manual-evidence.json) define the current two-platform acceptance requirements.
+
 Status: partial automated observations awaiting review; not a passed manual platform record.
 
 Observed on: 2026-09-06 UTC

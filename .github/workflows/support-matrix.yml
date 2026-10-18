@@ -38,7 +38,7 @@ jobs:
       - name: Run unit tests
         run: python -m unittest discover -s tests -v
 
-      - name: Verify supported host decision
+      - name: Check lifecycle prerequisites
         run: ./bin/byte check --format json
 
   shells:

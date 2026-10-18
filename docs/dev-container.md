@@ -1,6 +1,6 @@
 # Test Byte in an Ubuntu dev container
 
-The repository includes an optional Ubuntu 24.04 x86_64 test environment in `.devcontainer/`. It installs Python 3.12 from Ubuntu, Git, Bash, Zsh, and the utilities needed to build and exercise a candidate. Byte still has no supported functional release.
+The repository includes an optional Ubuntu 24.04 x86_64 test environment in `.devcontainer/`. It installs Python 3.12 from Ubuntu, Git, Bash, Zsh, and the utilities needed to build and exercise a candidate. The container runs feature readiness checks, the unit suite, and disposable candidate lifecycle rehearsals. Byte still has no supported functional release.
 
 The public checkout is mounted read-only at `/workspaces/byte-core`. Edit source files on the host; the container sees those edits, but cannot write back through this mount. Tests run as the unprivileged `byte-test` account. Generated plans, fictional deployments, profiles, and installed candidates belong in the container's temporary storage, outside the checkout.
 
@@ -32,9 +32,9 @@ python3 -m unittest discover -s tests
 python3 .devcontainer/smoke-test.py
 ```
 
-Expect `Result: supported`, a passing unit suite, and `PASS` lines for each smoke-test stage. The smoke test builds and packages the actual candidate, runs its extracted launcher, checks and applies an exactly approved helper setup, initializes a fictional deployment, installs and verifies Core, exercises replay, applies and removes Bash/Zsh integration, removes Core, and compares the fictional deployment's file hashes. A separate disposable installation exercises update, verification, replay, and removal between the two public fictional release fixtures through the packaged CLI. These fixtures are not published versions or a full candidate-to-candidate upgrade. The script cleans up its own test tree only after success. The unit suite separately covers refusal cases and injected interruption recovery.
+Expect `Result: ready`, a passing unit suite, and `PASS` lines for each smoke-test stage. The smoke test builds and packages the actual candidate, runs its extracted launcher, checks and applies an exactly approved helper setup, initializes a fictional deployment, installs and verifies Core, exercises replay, applies and removes Bash/Zsh integration, removes Core, and compares the fictional deployment's file hashes. A separate disposable installation exercises update, verification, replay, and removal between the two public fictional release fixtures through the packaged CLI. These fixtures are not published versions or a full candidate-to-candidate upgrade. The script cleans up its own test tree only after success. The unit suite separately covers refusal cases and injected interruption recovery.
 
-The smoke test can also run on a supported native host, but creates only fresh disposable test roots. Child processes use a minimal environment with disposable home, configuration, cache, state, runtime, and temporary directories; ambient helper settings and personal Git configuration are not inherited. Bash/Zsh checks explicitly source fictional profiles and the candidate asset. It does not bypass `byte check`. The script prints the candidate archive digest; failures retain the generated tree and print its private local location for inspection. Keep that location and all plans out of public feedback. Inspect failed state before exiting the disposable container, because `--rm` deletes its writable storage on exit.
+The smoke test can also run on a native host whose required capabilities pass, but creates only fresh disposable test roots. Child processes use a minimal environment with disposable home, configuration, cache, state, runtime, and temporary directories; ambient helper settings and personal Git configuration are not inherited. Bash/Zsh checks explicitly source fictional profiles and the candidate asset. It does not bypass `byte check`. The script prints the candidate archive digest; failures retain the generated tree and print its private local location for inspection. Keep that location and all plans out of public feedback. Inspect failed state before exiting the disposable container, because `--rm` deletes its writable storage on exit.
 
 For an interactive exercise, follow the [terminal first-session walkthrough](getting-started.md#terminal-alternative) inside the container. Use `exit` when finished. This removes that terminal container and its temporary files; the image remains available for the next run and the source checkout remains on the host.
 
@@ -54,12 +54,12 @@ Successful runs provide Ubuntu-container evidence for the CLI, candidate packagi
 
 Containers share the runtime host's kernel. This does not establish native Kubuntu, macOS, host login-shell, hardware, or live Codex integration behavior. On an arm64 host, the explicit `linux/amd64` platform requires working emulation; an emulated result is not native x86_64 evidence. See Docker's [container and VM explanation](https://docs.docker.com/get-started/docker-concepts/the-basics/what-is-a-container/) and Byte's [support matrix](support-matrix.md).
 
-Neither the unit suite nor this smoke test changes the manual-evidence ledger. The [release checklist](release-checklist.md) and independent fresh-user review still apply. Dev-container files are source-checkout tooling and are excluded from Byte's release candidate.
+Readiness is based on required filesystem, process, and tool capabilities; Ubuntu 24.04 being absent from the required native evidence targets does not refuse the rehearsal. Neither the unit suite nor this smoke test changes the manual-evidence ledger. The [release checklist](release-checklist.md) and independent fresh-user review still apply. Dev-container files are source-checkout tooling and are excluded from Byte's release candidate.
 
 ## Troubleshooting and cleanup
 
 - If Docker cannot connect, confirm your local engine is running and accessible. Do not switch to an unknown remote Docker context for this test.
 - If the build cannot download packages, resolve build-time connectivity before attempting the offline run.
 - If an editor cannot write a source file, edit it in the host checkout; the read-only mount is intentional.
-- If `byte check` reports an unexpected host or Python version, confirm you are inside the image built from this recipe. Do not bypass platform detection.
+- If `byte check` reports an unexpected host or Python version, confirm you are inside the image built from this recipe. Read the failed capability check; do not bypass safety checks or install prerequisites implicitly.
 - To discard the local image after its containers are gone, use `docker image rm byte-core-dev:ubuntu-24.04`. Avoid broad prune commands; other images and containers are unrelated to this setup.

@@ -62,6 +62,10 @@ Keep destructive targets explicit. Preserve unrelated user work. Do not claim su
 
 Separate repository planning from implementation when a checkpoint requires review. Do not expand work into adjacent issues without approval.
 
+## Troubleshooting and resumption
+
+For investigation and longer-work handoffs, follow [`docs/troubleshooting.md`](docs/troubleshooting.md). Establish expected and observed behavior, distinguish evidence from assumptions, choose checks that separate plausible causes, and revise affected conclusions after corrections. Use an optional compact checkpoint when it helps continuation; keep deployment notes outside public Core content and access or save them only within the authorized scope. Report verification and satisfaction of the user's objective separately. This advisory guidance preserves existing approval rules and never authorizes collection, reporting, or mutation.
+
 ## GitHub workflow
 
 For GitHub preparation, publication, PR review, merging, or cleanup, read and follow [`docs/github-workflow.md`](docs/github-workflow.md). It is the reusable Core-owned workflow, with these repository rules as the local safety baseline. Carry authorized work through validation, result verification, and eligible cleanup; preserve existing authorization without treating it as permission for unrelated actions.
@@ -89,6 +93,12 @@ Documentation accuracy is part of completion. Every change to behavior, commands
 - Summarize documentation impact in the completion report or pull request. If no documentation change is needed, state why. Do not defer required documentation to an unspecified follow-up or call the work complete while it is stale.
 
 This rule applies only to Core-owned public material. It never authorizes reading, importing, or rewriting deployment-owned documentation or private source material. Record newly discovered implementation gaps truthfully; documenting a gap does not fulfill an unmet safety requirement or authorize unrelated implementation work.
+
+## Fork divergence record
+
+Maintain [the fork divergence log](docs/fork-divergence.md) when adding, changing, superseding, or removing an intentional local difference in behavior, documentation, or repository guidance. Update the relevant stable entry in the same change; include rationale, affected paths, validation and limits, and verified commit or upstream references when available. Track local implementation separately from upstream disposition, and retain resolved entries. Do not assume older differences have been audited or claim upstream acceptance without evidence.
+
+Use public-safe engineering summaries only. The log must not contain transcripts, personal runtime installations, deployment facts, private diagnostics, or environment values. This is advisory maintenance guidance, not an automated tracker or authorization to publish, contact maintainers, or merge changes.
 
 ## Completion evidence
 

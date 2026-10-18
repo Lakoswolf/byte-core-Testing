@@ -743,6 +743,7 @@ def verify_installation(plan: InstallPlan) -> InstallationResult:
 def apply_removal(plan: RemovalPlan) -> InstallationResult:
     _validate_removal_plan(plan)
     if _removal_absent(plan):
+        _verify_removal(plan)
         core, state = _removal_roots(plan)
         return InstallationResult(
             "already_removed", plan.plan_id, str(core), str(state),

@@ -6,7 +6,7 @@ Byte Core is independent and is not affiliated with or endorsed by OpenAI. Its v
 
 | Surface | v0.1 status | Ownership and purpose |
 | --- | --- | --- |
-| Repository `AGENTS.md` | Supported | Public durable repository layout, validation, ownership, safety, and GitHub workflow guidance |
+| Repository `AGENTS.md` | Supported | Public durable repository layout, validation, ownership, safety, GitHub workflow, and troubleshooting guidance |
 | Project `.codex/config.toml` | Configured; requires project and hook trust | Enables only the repository SessionStart hook |
 | Project SessionStart hook | Advisory proof | Emits generic safety context; never blocks tools, mutates files, or collects private context |
 | Byte skill | Deferred | Reusable workflows are carried by the CLI contracts and repository guidance; no separate skill is packaged |
@@ -49,6 +49,8 @@ Hook schemas can evolve. Byte accepts only the small documented subset it needs 
 
 The v0.1 workflows are expressed as exact CLI plans and repository guidance. The [GitHub workflow](github-workflow.md) now gives assistants reusable preparation, publication, merge verification, and cleanup instructions, with an explicit entry in `AGENTS.md`. It ships in candidate documentation and does not depend on personal memory or hook execution. It remains advisory: no new GitHub command, automatic enforcement, or live assistant acceptance evidence is provided.
 
-A separate Byte skill remains deferred. This workflow has one maintained contract in Core documentation; packaging a skill or distributing instructions to other repositories would require a separately scoped integration change. Installing Core or creating a deployment does not automatically activate the guidance outside this checkout.
+The [troubleshooting guide](troubleshooting.md) also ships as advisory documentation referenced by `AGENTS.md`. It covers evidence labels, focused checks, corrections, optional deployment-owned checkpoints, and honest outcome reporting. It adds no hook input, automatic document access or collection, remote standard retrieval, or changed approval rules. Its fictional review cases are manual acceptance criteria, not evidence of live assistant compliance.
+
+A separate Byte skill remains deferred. These workflows have maintained contracts in Core documentation; packaging a skill or distributing instructions to other repositories would require a separately scoped integration change. Installing Core or creating a deployment does not automatically activate the guidance outside this checkout.
 
 Plugin packaging is also deferred. A future plugin must be justified by repository-native MVP evidence, use a valid public manifest, preserve project trust and hook review, remain optional, and introduce no private connector dependency. The public repository will not imply installation, endorsement, or availability before that work is separately approved.

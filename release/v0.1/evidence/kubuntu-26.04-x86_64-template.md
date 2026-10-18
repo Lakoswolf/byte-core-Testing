@@ -9,7 +9,7 @@ Shell: Bash; record optional Zsh coverage separately when available.
 
 ## Environment
 
-Record whether the observations came from native Kubuntu 26.04 x86_64, a virtual machine, a container, or emulation. Only the required reviewed native observations complete this target. State which documented flavor criterion was confirmed: explicit operating-system identification, explicit variant identification, or the installed Kubuntu desktop metapackage. An Ubuntu identifier or KDE session alone is insufficient.
+Record whether the observations came from native Kubuntu 26.04 x86_64, a virtual machine, a container, or emulation. Only the required reviewed native observations complete this target. State how the actual native target was independently confirmed and record any difference from the informational OS label. Runtime identification uses explicit operating-system/variant metadata only and may report Ubuntu when flavor metadata is absent. An Ubuntu identifier or KDE session alone is insufficient to establish Kubuntu acceptance.
 
 Keep hostnames, personal paths, package inventory, raw system metadata, logs, and deployment configuration out of the public record. Record only the generic target, identification conclusion, tested versions, and concise outcomes.
 

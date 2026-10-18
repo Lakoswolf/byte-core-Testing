@@ -2,6 +2,8 @@
 
 Byte Core's experimental shell integration is an explicit, reversible layer for Bash and Zsh. It does not change the login shell, install packages, select a shell framework, inspect host identity, or infer deployment paths.
 
+`byte check --feature shell-bash` or `shell-zsh` checks filesystem prerequisites and availability of the selected interpreter. Profile planning, apply, verification, and removal use lifecycle filesystem prerequisites, so they can prepare configuration before a shell is installed. Actual shell execution still needs that interpreter. Byte does not install it automatically.
+
 ## Generic shell asset
 
 [`shell/byte-shell.sh`](../shell/byte-shell.sh) provides a POSIX-compatible basic layer and loads adjacent native assets for Bash or Zsh. Repeated sourcing preserves per-shell feature preferences. Its original basic helpers remain available:
@@ -53,6 +55,12 @@ Syntax highlighting is never a dependency. A Zsh installation plan may include a
 
 Bash plans reject this option. Byte does not locate, download, install, upgrade, configure, or remove a syntax-highlighting package.
 
+## Setup-wizard session entrypoint
+
+The source-only [setup wizard](getting-started.md#permanent-locations-and-finishing-setup) can generate a new, reviewed deployment-owned session script that selects helper settings, adds the chosen installation to `PATH`, and sources its packaged shell asset. It then uses this unchanged shell planner to bind the custom entrypoint and separately approve/apply/verify the profile change. Existing profiles retain their unrelated bytes and modes, with backups retained. The wrapper does not change the login shell or immediately source the user profile. Bash login profiles may separately need to source `.bashrc`.
+
+Custom entrypoints bind only their explicit file, as described below; the installed asset and launcher remain covered by separate installation verification. The helper TOML is intentionally mutable deployment data. Shell removal leaves the wrapper and helper file available for reviewed cleanup.
+
 ## Current boundary
 
 This is an internal bootstrap proof, not a supported installed shell product. Optional prompt and history-keybinding customization is implemented; history files are not inspected or rewritten. Helpers do not discover repositories, install completions or dependencies, infer device configuration, automatically publish changes, or install remote wake senders. Reachability and wake requests do not prove device identity, capabilities, or power state. Manual native-platform and real application/network evidence remains pending.
@@ -60,3 +68,7 @@ This is an internal bootstrap proof, not a supported installed shell product. Op
 Installation binds the explicit entrypoint and optional `--syntax-highlighting` file, with a 4 MiB limit per source. An entrypoint named `byte-shell.sh` follows Core's fixed package layout: Bash additionally requires adjacent `byte-shell-bash.sh`; Zsh requires adjacent `byte-shell-zsh.zsh`. The selected native file's checksum and mode are also bound. Keep the Core entrypoint's packaged name and adjacent native files intact. A custom entrypoint with another name binds that explicit file only.
 
 This is a fixed dependency contract, not recursive inspection of shell imports. The helper launcher and Python backend, arbitrary imports in custom or third-party code, and a highlighter selected later through deployment-owned helper configuration are outside this shell plan's source snapshot. The checks establish equality at apply, replay, and verification time; they do not intercept future shell sourcing or prevent later filesystem changes. Review explicitly selected code before sourcing it. Removal restores profile absence or unrelated content, but keeps its private backup files for recovery.
+
+### Optional wizard Python PATH selection
+
+The source setup wizard can offer a Python directory in its deployment-owned session entrypoint after a separately permitted fresh-shell readiness check. The existing managed profile plan binds that entrypoint and preserves the profile backup; it does not turn Python or the directory contents into Core-managed files. The selection affects command lookup outside Byte too. See [permanent setup](getting-started.md#permanent-locations-and-finishing-setup) for approval, preview, deduplication, startup-file execution, and login-terminal limitations. Profile-byte verification and fresh-shell runtime readiness are reported separately.
