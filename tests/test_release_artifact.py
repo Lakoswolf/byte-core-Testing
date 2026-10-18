@@ -114,8 +114,31 @@ class ReleaseArtifactTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             parent = Path(temporary)
             artifact = builder.build("0.1.0", parent / "artifact")
-            evidence = (
-                REPOSITORY_ROOT / "release" / "v0.1" / "manual-evidence.json"
+            evidence = parent / "manual-evidence.json"
+            evidence.write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "release": "0.1.0",
+                        "targets": [
+                            {
+                                "operating_system": operating_system,
+                                "architecture": architecture,
+                                "status": "pending",
+                                "evidence": None,
+                            }
+                            for operating_system, architecture in sorted(
+                                gate.EXPECTED_TARGETS
+                            )
+                        ],
+                        "fresh_user_review": {
+                            "status": "pending",
+                            "evidence": None,
+                        },
+                    },
+                    sort_keys=True,
+                ),
+                encoding="utf-8",
             )
 
             statuses = gate.check(
